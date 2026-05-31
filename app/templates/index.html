@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-building fs-1 text-primary"></i>
+        <h3 class="mt-2">{{ total_negocios }}</h3>
+        <p class="text-muted mb-0">Negocios activos</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-chat-dots fs-1 text-success"></i>
+        <h3 class="mt-2">{{ total_conversaciones }}</h3>
+        <p class="text-muted mb-0">Conversaciones activas</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-cpu fs-1 text-info"></i>
+        <h3 class="mt-2">{{ rubros|length }}</h3>
+        <p class="text-muted mb-0">Rubros disponibles</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-building"></i> Negocios</div>
+      <div class="card-body p-0">
+        <table class="table table-dark table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>RUT</th>
+              <th>Rubro</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in negocios %}
+            <tr>
+              <td><a href="/admin/negocios/{{ n.rut }}" class="text-decoration-none">{{ n.nombre }}</a></td>
+              <td>{{ n.rut }}</td>
+              <td>{{ rubros[n.rubro_id].nombre if n.rubro_id in rubros else '?' }}</td>
+              <td>
+                {% if n.activo %}
+                <span class="badge bg-success">Activo</span>
+                {% else %}
+                <span class="badge bg-danger">Inactivo</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-chat-dots"></i> Últimas conversaciones</div>
+      <div class="card-body p-0">
+        <table class="table table-dark table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Contacto</th>
+              <th>Negocio</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in conversaciones %}
+            <tr>
+              <td>{{ c.contacto }}</td>
+              <td>{{ c.negocio }}</td>
+              <td>
+                {% if c.estado == 'activa' %}
+                <span class="badge bg-success">Activa</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ c.estado }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            {% if not conversaciones %}
+            <tr>
+              <td colspan="3" class="text-muted text-center">Sin conversaciones aún</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

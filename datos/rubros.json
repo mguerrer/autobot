@@ -1,0 +1,12 @@
+[
+  {"id": 1, "nombre": "Restaurante", "descripcion": "Restaurantes, cafeterías y afines"},
+  {"id": 2, "nombre": "Comercio Retail", "descripcion": "Tiendas, retail y venta directa"},
+  {"id": 3, "nombre": "Servicios Profesionales", "descripcion": "Abogados, contadores, consultores"},
+  {"id": 4, "nombre": "Salud y Bienestar", "descripcion": "Clínicas, centros de salud, spas"},
+  {"id": 5, "nombre": "Educación", "descripcion": "Institutos, academias, cursos"},
+  {"id": 6, "nombre": "Logística y Envíos", "descripcion": "Courier, transporte, delivery"},
+  {"id": 7, "nombre": "Tecnología", "descripcion": "Soporte técnico, desarrollo, TI"},
+  {"id": 8, "nombre": "Inmobiliaria", "descripcion": "Corredores, arriendo, venta propiedades"},
+  {"id": 9, "nombre": "Entretenimiento", "descripcion": "Eventos, juegos, streaming"},
+  {"id": 10, "nombre": "Otros", "descripcion": "Otros rubros no categorizados"}
+]

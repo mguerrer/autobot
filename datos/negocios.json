@@ -1,0 +1,32 @@
+[
+  {
+    "rut": "76.123.456-7",
+    "nombre": "Pizzería Napoli",
+    "rubro_id": 1,
+    "dueno_nombre": "Carlos González",
+    "dueno_telefono": "+56912345678",
+    "bot_whatsapp": "+56998765432",
+    "verify_token": "napoli_token_123",
+    "activo": true
+  },
+  {
+    "rut": "77.789.012-3",
+    "nombre": "TechSupport Ltda.",
+    "rubro_id": 7,
+    "dueno_nombre": "María Soto",
+    "dueno_telefono": "+56923456789",
+    "bot_whatsapp": "+56987654321",
+    "verify_token": "tech_token_456",
+    "activo": true
+  },
+  {
+    "rut": "78.901.234-5",
+    "nombre": "Club Inactivo",
+    "rubro_id": 9,
+    "dueno_nombre": "Pedro Díaz",
+    "dueno_telefono": "+56934567890",
+    "bot_whatsapp": "+56900000000",
+    "verify_token": "club_inactivo_token",
+    "activo": false
+  }
+]

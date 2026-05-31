@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ negocio.nombre }}{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/negocios">Negocios</a></li>
+        <li class="breadcrumb-item active">{{ negocio.nombre }}</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6 mb-3">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-info-circle"></i> Datos del negocio</div>
+      <div class="card-body">
+        <table class="table table-dark table-borderless mb-0">
+          <tr>
+            <th class="text-muted">Nombre</th>
+            <td>{{ negocio.nombre }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">RUT</th>
+            <td>{{ negocio.rut }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Rubro</th>
+            <td><span class="badge bg-info">{{ rubro.nombre if rubro else '?' }}</span></td>
+          </tr>
+          <tr>
+            <th class="text-muted">Dueño</th>
+            <td>{{ negocio.dueno_nombre }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Tel. Dueño</th>
+            <td>{{ negocio.dueno_telefono }}</td>
+          </tr>
+          <tr>
+            <th class="text-muted">Bot WhatsApp</th>
+            <td><code>{{ negocio.bot_whatsapp }}</code></td>
+          </tr>
+          <tr>
+            <th class="text-muted">Estado</th>
+            <td>
+              {% if negocio.activo %}
+              <span class="badge bg-success">Activo</span>
+              {% else %}
+              <span class="badge bg-danger">Inactivo</span>
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-3">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-chat-dots"></i> Conversaciones</div>
+      <div class="card-body p-0">
+        <table class="table table-dark table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Contacto</th>
+              <th>Estado</th>
+              <th>Último mensaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in conversaciones %}
+            <tr>
+              <td>{{ c.contacto }}</td>
+              <td>
+                {% if c.estado == 'activa' %}
+                <span class="badge bg-success">Activa</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ c.estado }}</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ c.ultimo_mensaje }}</td>
+            </tr>
+            {% endfor %}
+            {% if not conversaciones %}
+            <tr>
+              <td colspan="3" class="text-muted text-center">Sin conversaciones</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
