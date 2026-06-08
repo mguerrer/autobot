@@ -16,7 +16,12 @@
 <div class="row mb-4">
   <div class="col-md-6 mb-3">
     <div class="card h-100">
-      <div class="card-header"><i class="bi bi-info-circle"></i> Datos del negocio</div>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-info-circle"></i> Datos del negocio</span>
+        <a href="/admin/negocios/{{ negocio.rut }}/editar" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-pencil"></i> Editar
+        </a>
+      </div>
       <div class="card-body">
         <table class="table table-dark table-borderless mb-0">
           <tr>
@@ -43,6 +48,12 @@
             <th class="text-muted">Bot WhatsApp</th>
             <td><code>{{ negocio.bot_whatsapp }}</code></td>
           </tr>
+          {% if negocio.phone_number_id %}
+          <tr>
+            <th class="text-muted">Phone Number ID</th>
+            <td><code>{{ negocio.phone_number_id }}</code></td>
+          </tr>
+          {% endif %}
           <tr>
             <th class="text-muted">Estado</th>
             <td>

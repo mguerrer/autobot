@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}WA Bridge{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="bi bi-wifi"></i> WhatsApp Bridge</h1>
+  <a href="javascript:location.reload()" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-clockwise"></i> Recargar
+  </a>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-info-circle"></i> Estado de conexión
+      </div>
+      <div class="card-body">
+        {% if status.error %}
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            Error: {{ status.error }}
+          </div>
+        {% else %}
+          <table class="table table-borderless">
+            <tr>
+              <td><strong>Estado:</strong></td>
+              <td>
+                {% if status.state == "connected" %}
+                  <span class="badge bg-success">Conectado</span>
+                {% elif status.state == "awaiting_qr" %}
+                  <span class="badge bg-warning text-dark">Esperando QR</span>
+                {% elif status.state == "disconnected" %}
+                  <span class="badge bg-secondary">Desconectado</span>
+                {% elif status.state == "unreachable" %}
+                  <span class="badge bg-danger">Inalcanzable</span>
+                {% else %}
+                  <span class="badge bg-info">{{ status.state }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% if status.jid %}
+            <tr>
+              <td><strong>Conectado como:</strong></td>
+              <td><code>{{ status.jid }}</code></td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td><strong>Bridge URL:</strong></td>
+              <td><code>{{ bridge_url }}</code></td>
+            </tr>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header">
+        <i class="bi bi-qr-code"></i> Código QR
+      </div>
+      <div class="card-body text-center">
+        {% if status.state == "awaiting_qr" and qr %}
+          <img src="{{ qr }}" alt="QR para conectar WhatsApp" class="img-fluid" style="max-width: 300px;">
+          <p class="mt-2 text-muted">Escanea este código con WhatsApp &gt; Dispositivos vinculados</p>
+        {% elif status.state == "connected" %}
+          <div class="py-4">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+            <p class="mt-2 text-success fw-bold">WhatsApp conectado</p>
+          </div>
+        {% elif status.state == "disconnected" or status.state == "unreachable" %}
+          <div class="py-4">
+            <i class="bi bi-clock-history" style="font-size: 4rem;"></i>
+            <p class="mt-2 text-muted">Esperando conexión... (reintenta automáticamente)</p>
+          </div>
+        {% else %}
+          <div class="py-4">
+            <i class="bi bi-hourglass-split" style="font-size: 4rem;"></i>
+            <p class="mt-2 text-muted">Iniciando...</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <i class="bi bi-info-lg"></i> ¿Cómo funciona?
+  </div>
+  <div class="card-body">
+    <ol class="mb-0">
+      <li>El bridge se conecta a WhatsApp Web usando <strong>Baileys</strong> (sin navegador).</li>
+      <li>Escanea el QR con WhatsApp &gt; Dispositivos vinculados &gt; Vincular un dispositivo.</li>
+      <li>Los mensajes entrantes se envían al webhook de Autobot para procesarlos.</li>
+      <li>Las respuestas se envían de vuelta automáticamente.</li>
+    </ol>
+  </div>
+</div>
+{% endblock %}

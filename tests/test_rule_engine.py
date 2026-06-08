@@ -45,7 +45,7 @@ class TestReglasNegocio:
 class TestRubros:
     def test_cargar_rubros(self):
         rubros = cargar_rubros()
-        assert len(rubros) == 10
+        assert len(rubros) == 11
         nombres = [r["nombre"] for r in rubros]
         assert "Restaurante" in nombres
         assert "Tecnología" in nombres
@@ -60,7 +60,7 @@ class TestRubros:
 class TestNegocios:
     def test_cargar_negocios(self):
         negocios = cargar_negocios()
-        assert len(negocios) == 3
+        assert len(negocios) >= 3
 
     def test_pizzeria_napoli(self):
         negocios = cargar_negocios()

@@ -1,7 +1,10 @@
 import abc
 import asyncio
+import json
 import logging
 from datetime import datetime, timezone
+
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,9 +29,74 @@ class MockWhatsAppProvider(WhatsAppProvider):
         print(f"\n---\n[{datetime.now(timezone.utc).isoformat()}] WhatsApp -> {to}:\n{message}\n---\n")
 
 
+class MetaWhatsAppProvider(WhatsAppProvider):
+    BASE_URL = "https://graph.facebook.com"
+
+    async def send_message(self, to: str, message: str, bot_whatsapp: str):
+        token = settings.whatsapp_api_token
+        api_version = settings.whatsapp_api_version
+        phone_number_id = _buscar_phone_number_id(bot_whatsapp)
+
+        if not token:
+            logger.error("WHATSAPP_API_TOKEN no configurado")
+            return
+
+        if not phone_number_id:
+            logger.error(f"Phone Number ID no encontrado para bot {bot_whatsapp}")
+            return
+
+        url = f"{self.BASE_URL}/{api_version}/{phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to.lstrip("+"),
+            "type": "text",
+            "text": {"preview_url": False, "body": message},
+        }
+
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+            if resp.status_code != 200:
+                logger.error(f"Meta API error {resp.status_code}: {resp.text}")
+            else:
+                logger.info(f"Mensaje enviado a {to} via Meta API (id: {resp.json().get('messages', [{}])[0].get('id', '?')})")
+
+
+def _buscar_phone_number_id(bot_whatsapp: str) -> str | None:
+    from app.services.rule_engine import cargar_negocios
+    for n in cargar_negocios():
+        if n.get("bot_whatsapp") == bot_whatsapp and n.get("phone_number_id"):
+            return n["phone_number_id"]
+    return None
+
+
+class BaileysWhatsAppProvider(WhatsAppProvider):
+    async def send_message(self, to: str, message: str, bot_whatsapp: str):
+        bridge_url = settings.wa_bridge_url
+        if not bridge_url:
+            logger.error("WA_BRIDGE_URL no configurado")
+            return
+        url = f"{bridge_url}/send"
+        payload = {"to": to, "message": message}
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code != 200:
+                    logger.error(f"Bridge error {resp.status_code}: {resp.text}")
+                else:
+                    logger.info(f"Mensaje enviado a {to} via WA Bridge")
+        except httpx.RequestError as e:
+            logger.error(f"Error conectando al bridge: {e}")
+
+
 def get_provider() -> WhatsAppProvider:
-    if settings.whatsapp_provider == "mock":
-        return MockWhatsAppProvider()
+    if settings.wa_bridge_url:
+        return BaileysWhatsAppProvider()
+    if settings.whatsapp_api_token:
+        return MetaWhatsAppProvider()
     return MockWhatsAppProvider()
 
 

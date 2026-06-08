@@ -1,12 +1,14 @@
+import httpx
 from fastapi import APIRouter, Request, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje
-from app.services.rule_engine import cargar_negocios, cargar_rubros
+from app.services.rule_engine import cargar_negocios, cargar_rubros, guardar_negocios
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -83,6 +85,55 @@ async def admin_negocio_detail(request: Request, rut: str, db: AsyncSession = De
     })
 
 
+@router.get("/negocios/{rut}/editar", response_class=HTMLResponse)
+async def admin_negocio_editar(request: Request, rut: str):
+    negocios = cargar_negocios()
+    rubros = cargar_rubros()
+    negocio = next((n for n in negocios if n["rut"] == rut), None)
+    if not negocio:
+        return HTMLResponse("Negocio no encontrado", status_code=404)
+    return templates.TemplateResponse(request, "negocio_edit.html", {
+        "negocio": negocio,
+        "rubros": rubros,
+    })
+
+
+@router.post("/negocios/{rut}/editar")
+async def admin_negocio_guardar(request: Request, rut: str):
+    negocios = cargar_negocios()
+    rubros = cargar_rubros()
+    negocio = next((n for n in negocios if n["rut"] == rut), None)
+    if not negocio:
+        return HTMLResponse("Negocio no encontrado", status_code=404)
+
+    form = await request.form()
+    negocio["nombre"] = form.get("nombre", negocio["nombre"])
+    negocio["dueno_nombre"] = form.get("dueno_nombre", negocio["dueno_nombre"])
+    negocio["dueno_telefono"] = form.get("dueno_telefono", negocio["dueno_telefono"])
+    negocio["bot_whatsapp"] = form.get("bot_whatsapp", negocio["bot_whatsapp"])
+    negocio["verify_token"] = form.get("verify_token", negocio.get("verify_token", ""))
+    negocio["phone_number_id"] = form.get("phone_number_id", negocio.get("phone_number_id", ""))
+    try:
+        negocio["rubro_id"] = int(form.get("rubro_id", negocio["rubro_id"]))
+    except (ValueError, TypeError):
+        pass
+    negocio["activo"] = form.get("activo") == "on"
+
+    guardar_negocios(negocios)
+    return RedirectResponse(url=f"/admin/negocios/{rut}", status_code=303)
+
+
+@router.post("/negocios/{rut}/toggle")
+async def admin_negocio_toggle(request: Request, rut: str):
+    negocios = cargar_negocios()
+    negocio = next((n for n in negocios if n["rut"] == rut), None)
+    if not negocio:
+        return HTMLResponse("Negocio no encontrado", status_code=404)
+    negocio["activo"] = not negocio["activo"]
+    guardar_negocios(negocios)
+    return RedirectResponse(url="/admin/negocios", status_code=303)
+
+
 @router.get("/chats", response_class=HTMLResponse)
 async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
     negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
@@ -108,4 +159,33 @@ async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
         })
     return templates.TemplateResponse(request, "chats.html", {
         "conversaciones": conversaciones,
+    })
+
+
+@router.get("/wa-bridge", response_class=HTMLResponse)
+async def admin_wa_bridge(request: Request):
+    bridge_url = settings.wa_bridge_url
+    status = {"error": "WA_BRIDGE_URL no configurado"}
+    qr_data = None
+
+    if bridge_url:
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.get(f"{bridge_url}/status")
+                status = resp.json()
+        except httpx.RequestError as e:
+            status = {"error": str(e), "state": "unreachable"}
+
+        if status.get("state") == "awaiting_qr":
+            try:
+                async with httpx.AsyncClient(timeout=5) as client:
+                    qr_resp = await client.get(f"{bridge_url}/qr")
+                    qr_data = qr_resp.json().get("qr")
+            except httpx.RequestError:
+                pass
+
+    return templates.TemplateResponse(request, "wa_bridge.html", {
+        "status": status,
+        "qr": qr_data,
+        "bridge_url": bridge_url,
     })

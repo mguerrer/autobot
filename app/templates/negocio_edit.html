@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ negocio.nombre }}{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/negocios">Negocios</a></li>
+        <li class="breadcrumb-item"><a href="/admin/negocios/{{ negocio.rut }}">{{ negocio.nombre }}</a></li>
+        <li class="breadcrumb-item active">Editar</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pencil"></i> Editar negocio</div>
+      <div class="card-body">
+        <form action="/admin/negocios/{{ negocio.rut }}/editar" method="POST">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">RUT</label>
+              <input type="text" class="form-control" value="{{ negocio.rut }}" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Rubro</label>
+              <select class="form-select" name="rubro_id">
+                {% for r in rubros %}
+                <option value="{{ r.id }}" {% if r.id == negocio.rubro_id %}selected{% endif %}>
+                  {{ r.nombre }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nombre del negocio</label>
+            <input type="text" class="form-control" name="nombre" value="{{ negocio.nombre }}" required>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre del dueño</label>
+              <input type="text" class="form-control" name="dueno_nombre" value="{{ negocio.dueno_nombre }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Teléfono del dueño</label>
+              <input type="text" class="form-control" name="dueno_telefono" value="{{ negocio.dueno_telefono }}" required>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Número WhatsApp del Bot</label>
+              <input type="text" class="form-control" name="bot_whatsapp" value="{{ negocio.bot_whatsapp }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Verify Token (webhook)</label>
+              <input type="text" class="form-control" name="verify_token" value="{{ negocio.verify_token or '' }}">
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Phone Number ID (Meta API)</label>
+              <input type="text" class="form-control" name="phone_number_id" value="{{ negocio.phone_number_id or '' }}" placeholder="Ej: 123456789012345">
+              <div class="form-text text-muted">Solo si usas Meta Cloud API. Se obtiene desde el panel de Meta Developers.</div>
+            </div>
+          </div>
+
+          <div class="mb-4 form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="activo" id="activoSwitch"
+              {% if negocio.activo %}checked{% endif %}>
+            <label class="form-check-label" for="activoSwitch">Negocio activo</label>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar cambios</button>
+            <a href="/admin/negocios/{{ negocio.rut }}" class="btn btn-secondary">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -55,3 +55,40 @@
 - ¿Hacen visitas a domicilio? Sí, con recargo de $5.000
 - ¿Cuánto tarda una reparación? 24-72 horas según repuestos
 - ¿Entregan certificado de garantía? Sí, con cada reparación
+
+## negocio: 7688844-2
+### Panadería El Pulento
+
+**Horario:**
+- Lunes a sábado: 7:00 a 21:00
+- Domingo: 8:00 a 14:00
+
+**Productos y precios:**
+- Pan amasado (1 kg): $2.500
+- Marraqueta (1 kg): $2.000
+- Hallulla (1 kg): $2.200
+- Pan de molde (500 g): $1.800
+- Pan integral (500 g): $2.000
+- Empanadas de horno: $2.500 c/u
+- Empanadas fritas: $1.500 c/u
+- Pastel de choclo (porción): $3.500
+- Kuchen (porción): $2.500
+- Café americano: $1.500
+- Café latte: $2.000
+- Té: $1.000
+
+**Promociones:**
+- Después de las 19:00: pan con 20% descuento
+- Lleva 6 empanadas y paga 5
+- Combo desayuno (café + pan con mantequilla): $2.500
+
+**Políticas:**
+- Delivery gratis sobre $10.000 en sector céntrico
+- Tiempo de entrega: 20-30 minutos
+- Pago: efectivo, débito, transferencia, Mercado Pago
+- Pedidos especiales con 24 hrs de anticipación
+
+**Preguntas frecuentes:**
+- ¿Tienen productos sin sal? Sí, pan sin sal bajo pedido
+- ¿Hacen pasteles personalizados? Sí, cotizar con 3 días hábiles
+- ¿Usan manteca vegetal? Disponible versión con margarina vegetal

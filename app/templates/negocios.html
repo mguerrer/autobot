@@ -19,6 +19,7 @@
           <th>Teléfono Dueño</th>
           <th>Bot WhatsApp</th>
           <th>Estado</th>
+          <th>Acción</th>
         </tr>
       </thead>
       <tbody>
@@ -30,18 +31,31 @@
           <td>{{ n.dueno_nombre }}</td>
           <td>{{ n.dueno_telefono }}</td>
           <td><code>{{ n.bot_whatsapp }}</code></td>
-          <td>
-            {% if n.activo %}
-            <span class="badge bg-success">Activo</span>
-            {% else %}
-            <span class="badge bg-danger">Inactivo</span>
-            {% endif %}
-          </td>
-        </tr>
+            <td>
+              {% if n.activo %}
+              <span class="badge bg-success">Activo</span>
+              {% else %}
+              <span class="badge bg-danger">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="/admin/negocios/{{ n.rut }}/editar" class="btn btn-sm btn-outline-primary" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form action="/admin/negocios/{{ n.rut }}/toggle" method="POST" class="d-inline">
+                  <button type="submit" class="btn btn-sm btn-outline-{{ 'warning' if n.activo else 'success' }}"
+                    title="{{ 'Desactivar' if n.activo else 'Activar' }}">
+                    <i class="bi bi-{{ 'pause-fill' if n.activo else 'play-fill' }}"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
         {% endfor %}
         {% if not negocios %}
         <tr>
-          <td colspan="7" class="text-muted text-center">No hay negocios configurados</td>
+          <td colspan="8" class="text-muted text-center">No hay negocios configurados</td>
         </tr>
         {% endif %}
       </tbody>

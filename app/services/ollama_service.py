@@ -12,6 +12,11 @@ def get_client():
     return _client
 
 
+def _options():
+    opts = {"temperature": 0.7, "max_tokens": 500, "num_gpu": 0}
+    return opts
+
+
 async def generar_respuesta(system_prompt: str, historial: list[dict]) -> str:
     messages = [{"role": "system", "content": system_prompt}]
     for msg in historial:
@@ -21,6 +26,6 @@ async def generar_respuesta(system_prompt: str, historial: list[dict]) -> str:
     response = await client.chat(
         model=settings.ollama_model,
         messages=messages,
-        options={"temperature": 0.7, "max_tokens": 500},
+        options=_options(),
     )
     return response["message"]["content"]

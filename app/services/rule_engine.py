@@ -40,6 +40,15 @@ def cargar_rubros() -> list[dict]:
     return json.loads(ruta.read_text(encoding="utf-8"))
 
 
+def guardar_negocios(negocios: list[dict]) -> None:
+    import json
+    ruta = DATOS_DIR / "negocios.json"
+    ruta.write_text(
+        json.dumps(negocios, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def buscar_negocio_por_whatsapp(bot_whatsapp: str) -> dict | None:
     negocios = cargar_negocios()
     for n in negocios:

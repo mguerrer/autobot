@@ -8,5 +8,6 @@
   {"id": 7, "nombre": "Tecnología", "descripcion": "Soporte técnico, desarrollo, TI"},
   {"id": 8, "nombre": "Inmobiliaria", "descripcion": "Corredores, arriendo, venta propiedades"},
   {"id": 9, "nombre": "Entretenimiento", "descripcion": "Eventos, juegos, streaming"},
-  {"id": 10, "nombre": "Otros", "descripcion": "Otros rubros no categorizados"}
+  {"id": 10, "nombre": "Otros", "descripcion": "Otros rubros no categorizados"},
+  {"id": 11, "nombre": "Panadería", "descripcion": "Panaderías, pastelerías y repostería"}
 ]

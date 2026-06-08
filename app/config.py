@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     ollama_model: str = "gemma3:1b"
     database_url: str = "sqlite+aiosqlite:///./datos/autobot.db"
     whatsapp_provider: str = "mock"
+    whatsapp_api_token: str = ""
+    whatsapp_api_version: str = "v22.0"
+    wa_bridge_url: str = ""
+    wa_bot_whatsapp: str = ""
 
 
 settings = Settings()
