@@ -82,7 +82,7 @@
           </thead>
           <tbody>
             {% for c in conversaciones %}
-            <tr>
+            <tr role="button" class="conversacion-item" onclick="window.location='/admin/chats/{{ c.id }}'">
               <td>{{ c.contacto }}</td>
               <td>
                 {% if c.estado == 'activa' %}

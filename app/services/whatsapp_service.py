@@ -80,14 +80,14 @@ class BaileysWhatsAppProvider(WhatsAppProvider):
             logger.error("WA_BRIDGE_URL no configurado")
             return
         url = f"{bridge_url}/send"
-        payload = {"to": to, "message": message}
+        payload = {"to": to, "message": message, "bot_whatsapp": bot_whatsapp}
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.post(url, json=payload)
                 if resp.status_code != 200:
                     logger.error(f"Bridge error {resp.status_code}: {resp.text}")
                 else:
-                    logger.info(f"Mensaje enviado a {to} via WA Bridge")
+                    logger.info(f"Mensaje enviado a {to} via WA Bridge (bot: {bot_whatsapp})")
         except httpx.RequestError as e:
             logger.error(f"Error conectando al bridge: {e}")
 

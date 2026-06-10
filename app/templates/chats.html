@@ -20,7 +20,7 @@
       </thead>
       <tbody>
         {% for c in conversaciones %}
-        <tr>
+        <tr role="button" class="conversacion-item" onclick="window.location='/admin/chats/{{ c.id }}'">
           <td class="fw-semibold">{{ c.contacto }}</td>
           <td>{{ c.negocio }}</td>
           <td>

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Conversación {{ contacto_nombre }}{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/admin/chats">Chats</a></li>
+        <li class="breadcrumb-item active">{{ contacto_nombre or contacto_telefono }}</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+          <i class="bi bi-person-circle"></i>
+          <strong>{{ contacto_nombre or 'Sin nombre' }}</strong>
+          <span class="text-muted ms-2"><small>{{ contacto_telefono }}</small></span>
+          {% if negocio_nombre %}
+          <span class="badge bg-info ms-2">{{ negocio_nombre }}</span>
+          {% endif %}
+          {% if conversacion.estado == 'activa' %}
+          <span class="badge bg-success ms-2">Activa</span>
+          {% else %}
+          <span class="badge bg-secondary ms-2">{{ conversacion.estado }}</span>
+          {% endif %}
+        </span>
+        <div>
+          <button class="btn btn-sm btn-outline-warning" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+          </button>
+        </div>
+      </div>
+      <div class="card-body" style="max-height: 65vh; overflow-y: auto;" id="chat-messages">
+        {% for m in mensajes %}
+        <div class="mb-3">
+          {% if m.rol == 'user' %}
+          <div class="mensaje-usuario">
+            <div class="fw-bold small mb-1 text-white-50">Cliente</div>
+            <div class="text-break">{{ m.contenido | replace('\n', '<br>') | safe }}</div>
+            <div class="text-end small mt-1 text-white-50">{{ m.created_at.split('T')[0] }} {{ m.created_at.split('T')[1][:5] }}</div>
+          </div>
+          {% else %}
+          <div class="mensaje-bot">
+            <div class="fw-bold small mb-1 text-muted">Bot</div>
+            <div class="text-break">{{ m.contenido | replace('\n', '<br>') | safe }}</div>
+            <div class="text-end small mt-1 text-muted">{{ m.created_at.split('T')[0] }} {{ m.created_at.split('T')[1][:5] }}</div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% if not mensajes %}
+        <div class="text-center text-muted py-5">No hay mensajes en esta conversación</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if conversacion.estado == 'activa' %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <form method="POST" action="/admin/chats/{{ conversacion.id }}/responder" id="reply-form">
+          <div class="mb-3">
+            <label for="mensaje" class="form-label">Responder como bot</label>
+            <textarea class="form-control" id="mensaje" name="mensaje" rows="3" placeholder="Escribe tu respuesta..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send"></i> Enviar respuesta
+          </button>
+          <a href="/admin/negocios/{{ conversacion.negocio_rut }}/editar" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-gear"></i> Editar reglas del negocio
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var chat = document.getElementById('chat-messages');
+    if (chat) chat.scrollTop = chat.scrollHeight;
+  });
+</script>
+{% endblock %}

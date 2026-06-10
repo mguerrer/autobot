@@ -162,30 +162,91 @@ async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
     })
 
 
+@router.get("/chats/{conv_id}", response_class=HTMLResponse)
+async def admin_chat_detail(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
+    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+
+    result = await db.execute(
+        select(Conversacion, Contacto)
+        .join(Contacto, Conversacion.contacto_id == Contacto.id)
+        .where(Conversacion.id == conv_id)
+    )
+    row = result.one_or_none()
+    if not row:
+        return HTMLResponse("Conversación no encontrada", status_code=404)
+
+    conv, contacto = row
+
+    msgs_result = await db.execute(
+        select(Mensaje).where(Mensaje.conversacion_id == conv.id).order_by(Mensaje.created_at)
+    )
+    mensajes = msgs_result.scalars().all()
+
+    return templates.TemplateResponse(request, "conversacion_detail.html", {
+        "conversacion": conv,
+        "contacto_nombre": contacto.nombre or "",
+        "contacto_telefono": contacto.telefono,
+        "negocio_nombre": negocios.get(conv.negocio_rut, conv.negocio_rut),
+        "mensajes": mensajes,
+    })
+
+
+@router.post("/chats/{conv_id}/responder")
+async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
+    from app.services.whatsapp_service import get_provider
+
+    result = await db.execute(
+        select(Conversacion, Contacto)
+        .join(Contacto, Conversacion.contacto_id == Contacto.id)
+        .where(Conversacion.id == conv_id)
+    )
+    row = result.one_or_none()
+    if not row:
+        return HTMLResponse("Conversación no encontrada", status_code=404)
+
+    conv, contacto = row
+
+    form = await request.form()
+    texto = form.get("mensaje", "").strip()
+    if not texto:
+        return RedirectResponse(url=f"/admin/chats/{conv_id}", status_code=303)
+
+    msg = Mensaje(conversacion_id=conv.id, rol="assistant", contenido=texto)
+    db.add(msg)
+    await db.commit()
+
+    provider = get_provider()
+    await provider.send_message(contacto.telefono, texto, "")
+
+    return RedirectResponse(url=f"/admin/chats/{conv_id}", status_code=303)
+
+
 @router.get("/wa-bridge", response_class=HTMLResponse)
 async def admin_wa_bridge(request: Request):
     bridge_url = settings.wa_bridge_url
-    status = {"error": "WA_BRIDGE_URL no configurado"}
-    qr_data = None
+    sessions_data = []
+    error = None
 
     if bridge_url:
         try:
             async with httpx.AsyncClient(timeout=5) as client:
                 resp = await client.get(f"{bridge_url}/status")
-                status = resp.json()
+                data = resp.json()
+                sessions_data = data.get("sessions", [])
         except httpx.RequestError as e:
-            status = {"error": str(e), "state": "unreachable"}
+            error = str(e)
 
-        if status.get("state") == "awaiting_qr":
-            try:
-                async with httpx.AsyncClient(timeout=5) as client:
-                    qr_resp = await client.get(f"{bridge_url}/qr")
-                    qr_data = qr_resp.json().get("qr")
-            except httpx.RequestError:
-                pass
+        for s in sessions_data:
+            if s.get("state") == "awaiting_qr" and s.get("hasQR"):
+                try:
+                    async with httpx.AsyncClient(timeout=5) as client:
+                        qr_resp = await client.get(f"{bridge_url}/qr/{s['numero']}")
+                        s["qr_data"] = qr_resp.json().get("qr")
+                except httpx.RequestError:
+                    s["qr_data"] = None
 
     return templates.TemplateResponse(request, "wa_bridge.html", {
-        "status": status,
-        "qr": qr_data,
+        "sessions": sessions_data,
+        "error": error,
         "bridge_url": bridge_url,
     })
