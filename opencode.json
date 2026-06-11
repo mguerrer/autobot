@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "name": "Autobot",
+  "description": "Plataforma multi-tenant de chatbots para WhatsApp con IA vía Ollama",
+  "git": true
+}
