@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Conversaciones{% endblock %}
+{% block content %}
+<h2><i class="bi bi-chat-dots"></i> Conversaciones</h2>
+<p class="text-muted">{{ negocio }}</p>
+
+<div class="table-responsive mt-3">
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Contacto</th>
+        <th>Estado</th>
+        <th>Último mensaje</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in conversaciones %}
+      <tr>
+        <td>{{ c.contacto }}</td>
+        <td><span class="badge bg-{{ 'success' if c.estado == 'activa' else 'secondary' }}">{{ c.estado }}</span></td>
+        <td class="text-muted small">{{ c.ultimo_mensaje[:80] }}{{ '...' if c.ultimo_mensaje|length > 80 }}</td>
+        <td><a href="/cliente/conversaciones/{{ c.id }}" class="btn btn-sm btn-outline-primary">Ver</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">No hay conversaciones</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

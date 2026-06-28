@@ -37,23 +37,29 @@
         </div>
       </div>
       <div class="card-body" style="max-height: 65vh; overflow-y: auto;" id="chat-messages">
+        {% if ocultar_contenido %}
+        <div class="alert alert-warning text-center">
+          <i class="bi bi-eye-slash"></i> Contenido oculto por privacidad — solo clientes pueden ver conversaciones
+        </div>
+        {% else %}
         {% for m in mensajes %}
         <div class="mb-3">
           {% if m.rol == 'user' %}
           <div class="mensaje-usuario">
             <div class="fw-bold small mb-1 text-white-50">Cliente</div>
             <div class="text-break">{{ m.contenido | replace('\n', '<br>') | safe }}</div>
-            <div class="text-end small mt-1 text-white-50">{{ m.created_at.split('T')[0] }} {{ m.created_at.split('T')[1][:5] }}</div>
+            <div class="text-end small mt-1 text-white-50">{{ m.created_at.strftime('%d/%m %H:%M') if m.created_at else '' }}</div>
           </div>
           {% else %}
           <div class="mensaje-bot">
             <div class="fw-bold small mb-1 text-muted">Bot</div>
             <div class="text-break">{{ m.contenido | replace('\n', '<br>') | safe }}</div>
-            <div class="text-end small mt-1 text-muted">{{ m.created_at.split('T')[0] }} {{ m.created_at.split('T')[1][:5] }}</div>
+            <div class="text-end small mt-1 text-muted">{{ m.created_at.strftime('%d/%m %H:%M') if m.created_at else '' }}</div>
           </div>
           {% endif %}
         </div>
         {% endfor %}
+        {% endif %}
         {% if not mensajes %}
         <div class="text-center text-muted py-5">No hay mensajes en esta conversación</div>
         {% endif %}
@@ -62,7 +68,7 @@
   </div>
 </div>
 
-{% if conversacion.estado == 'activa' %}
+{% if conversacion.estado == 'activa' and not ocultar_contenido %}
 <div class="row">
   <div class="col-12">
     <div class="card">

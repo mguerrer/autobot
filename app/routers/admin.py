@@ -7,23 +7,61 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models import Conversacion, Contacto, Mensaje
+from app.models import Conversacion, Contacto, Mensaje, Usuario
 from app.services.rule_engine import cargar_negocios, cargar_rubros, guardar_negocios
+from app.auth import (
+    get_session, create_session, hash_password, verify_password,
+    ensure_authenticated, has_role, user_context,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse(request, "login.html", {})
+
+
+@router.post("/login")
+async def login_post(request: Request, db: AsyncSession = Depends(get_db)):
+    form = await request.form()
+    username = form.get("username", "")
+    password = form.get("password", "")
+    result = await db.execute(select(Usuario).where(Usuario.username == username))
+    user = result.scalar_one_or_none()
+    if not user or not verify_password(password, user.password_hash):
+        return templates.TemplateResponse(request, "login.html", {"error": "Usuario o contraseña incorrectos"})
+    token = create_session(user)
+    response = RedirectResponse(url="/admin/", status_code=303)
+    response.set_cookie(key="autobot_session", value=token, httponly=True, max_age=86400)
+    return response
+
+
+@router.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/admin/login", status_code=303)
+    response.delete_cookie("autobot_session")
+    return response
+
+
 @router.get("/", response_class=HTMLResponse)
 async def admin_index(request: Request, db: AsyncSession = Depends(get_db)):
+    session = ensure_authenticated(request)
     negocios = cargar_negocios()
     rubros = {r["id"]: r["nombre"] for r in cargar_rubros()}
+
+    if has_role(session, "cliente"):
+        rut = session.get("negocio_rut", "")
+        negocios = [n for n in negocios if n["rut"] == rut]
 
     result = await db.execute(select(Conversacion).order_by(desc(Conversacion.updated_at)).limit(10))
     conversaciones = result.scalars().all()
 
     convs = []
     for c in conversaciones:
+        if has_role(session, "cliente") and c.negocio_rut != session.get("negocio_rut"):
+            continue
         cr = await db.execute(select(Contacto).where(Contacto.id == c.contacto_id))
         contacto = cr.scalar_one_or_none()
         negocio = next((n for n in negocios if n["rut"] == c.negocio_rut), None)
@@ -40,21 +78,31 @@ async def admin_index(request: Request, db: AsyncSession = Depends(get_db)):
         "conversaciones": convs,
         "total_negocios": len(negocios),
         "total_conversaciones": len(conversaciones),
+        **user_context(request),
     })
 
 
 @router.get("/negocios", response_class=HTMLResponse)
 async def admin_negocios(request: Request):
+    ensure_authenticated(request)
     negocios = cargar_negocios()
+    session = get_session(request)
+    if has_role(session, "cliente"):
+        rut = session.get("negocio_rut", "")
+        negocios = [n for n in negocios if n["rut"] == rut]
     rubros = {rub["id"]: rub for rub in cargar_rubros()}
     return templates.TemplateResponse(request, "negocios.html", {
         "negocios": negocios,
         "rubros": rubros,
+        **user_context(request),
     })
 
 
 @router.get("/negocios/{rut}", response_class=HTMLResponse)
 async def admin_negocio_detail(request: Request, rut: str, db: AsyncSession = Depends(get_db)):
+    session = ensure_authenticated(request)
+    if has_role(session, "cliente") and session.get("negocio_rut") != rut:
+        return HTMLResponse("Acceso denegado", status_code=403)
     negocios = cargar_negocios()
     rubros = {rub["id"]: rub for rub in cargar_rubros()}
     negocio = next((n for n in negocios if n["rut"] == rut), None)
@@ -82,11 +130,15 @@ async def admin_negocio_detail(request: Request, rut: str, db: AsyncSession = De
         "negocio": negocio,
         "rubro": rubros.get(negocio["rubro_id"]),
         "conversaciones": convs,
+        **user_context(request),
     })
 
 
 @router.get("/negocios/{rut}/editar", response_class=HTMLResponse)
 async def admin_negocio_editar(request: Request, rut: str):
+    session = ensure_authenticated(request)
+    if has_role(session, "cliente") and session.get("negocio_rut") != rut:
+        return HTMLResponse("Acceso denegado", status_code=403)
     negocios = cargar_negocios()
     rubros = cargar_rubros()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
@@ -95,11 +147,15 @@ async def admin_negocio_editar(request: Request, rut: str):
     return templates.TemplateResponse(request, "negocio_edit.html", {
         "negocio": negocio,
         "rubros": rubros,
+        **user_context(request),
     })
 
 
 @router.post("/negocios/{rut}/editar")
 async def admin_negocio_guardar(request: Request, rut: str):
+    session = ensure_authenticated(request)
+    if has_role(session, "cliente") and session.get("negocio_rut") != rut:
+        return HTMLResponse("Acceso denegado", status_code=403)
     negocios = cargar_negocios()
     rubros = cargar_rubros()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
@@ -125,6 +181,9 @@ async def admin_negocio_guardar(request: Request, rut: str):
 
 @router.post("/negocios/{rut}/toggle")
 async def admin_negocio_toggle(request: Request, rut: str):
+    session = ensure_authenticated(request)
+    if has_role(session, "cliente") and session.get("negocio_rut") != rut:
+        return HTMLResponse("Acceso denegado", status_code=403)
     negocios = cargar_negocios()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
@@ -136,12 +195,17 @@ async def admin_negocio_toggle(request: Request, rut: str):
 
 @router.get("/chats", response_class=HTMLResponse)
 async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
+    session = ensure_authenticated(request)
     negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
-    result = await db.execute(
+    stmt = (
         select(Conversacion, Contacto.telefono, Contacto.nombre)
         .join(Contacto, Conversacion.contacto_id == Contacto.id)
         .order_by(desc(Conversacion.updated_at))
     )
+    if has_role(session, "cliente"):
+        rut = session.get("negocio_rut", "")
+        stmt = stmt.where(Conversacion.negocio_rut == rut)
+    result = await db.execute(stmt)
     rows = result.all()
     conversaciones = []
     for conv, tel, nom in rows:
@@ -159,11 +223,14 @@ async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
         })
     return templates.TemplateResponse(request, "chats.html", {
         "conversaciones": conversaciones,
+        "ocultar_contenido": has_role(session, "admin"),
+        **user_context(request),
     })
 
 
 @router.get("/chats/{conv_id}", response_class=HTMLResponse)
 async def admin_chat_detail(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
+    session = ensure_authenticated(request)
     negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
 
     result = await db.execute(
@@ -177,6 +244,9 @@ async def admin_chat_detail(request: Request, conv_id: int, db: AsyncSession = D
 
     conv, contacto = row
 
+    if has_role(session, "cliente") and conv.negocio_rut != session.get("negocio_rut"):
+        return HTMLResponse("Acceso denegado", status_code=403)
+
     msgs_result = await db.execute(
         select(Mensaje).where(Mensaje.conversacion_id == conv.id).order_by(Mensaje.created_at)
     )
@@ -188,11 +258,16 @@ async def admin_chat_detail(request: Request, conv_id: int, db: AsyncSession = D
         "contacto_telefono": contacto.telefono,
         "negocio_nombre": negocios.get(conv.negocio_rut, conv.negocio_rut),
         "mensajes": mensajes,
+        "ocultar_contenido": has_role(session, "admin"),
+        **user_context(request),
     })
 
 
 @router.post("/chats/{conv_id}/responder")
 async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
+    session = ensure_authenticated(request)
+    if has_role(session, "admin"):
+        return HTMLResponse("Los administradores no pueden responder conversaciones por privacidad", status_code=403)
     from app.services.whatsapp_service import get_provider
 
     result = await db.execute(
@@ -205,6 +280,9 @@ async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession 
         return HTMLResponse("Conversación no encontrada", status_code=404)
 
     conv, contacto = row
+
+    if has_role(session, "cliente") and conv.negocio_rut != session.get("negocio_rut"):
+        return HTMLResponse("Acceso denegado", status_code=403)
 
     form = await request.form()
     texto = form.get("mensaje", "").strip()
@@ -223,6 +301,9 @@ async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession 
 
 @router.get("/wa-bridge", response_class=HTMLResponse)
 async def admin_wa_bridge(request: Request):
+    session = ensure_authenticated(request)
+    if has_role(session, "admin"):
+        return HTMLResponse("Los administradores no pueden acceder a la gestión del bridge", status_code=403)
     bridge_url = settings.wa_bridge_url
     sessions_data = []
     error = None
@@ -249,4 +330,5 @@ async def admin_wa_bridge(request: Request):
         "sessions": sessions_data,
         "error": error,
         "bridge_url": bridge_url,
+        **user_context(request),
     })

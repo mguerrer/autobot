@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Configuración{% endblock %}
+{% block content %}
+<h2><i class="bi bi-gear"></i> Configuración del Bot</h2>
+<p class="text-muted">{{ negocio.nombre }}</p>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-power"></i> Estado del Bot
+      </div>
+      <div class="card-body text-center">
+        <div class="fs-1 mb-3">
+          {% if negocio.activo %}
+          <i class="bi bi-toggle-on text-success" style="font-size: 3rem;"></i>
+          {% else %}
+          <i class="bi bi-toggle-off text-danger" style="font-size: 3rem;"></i>
+          {% endif %}
+        </div>
+        <h5 class="{% if negocio.activo %}text-success{% else %}text-danger{% endif %}">
+          Bot {% if negocio.activo %}Activado{% else %}Desactivado{% endif %}
+        </h5>
+        <form method="post" action="/cliente/configuracion/toggle">
+          <button type="submit" class="btn btn-lg {% if negocio.activo %}btn-danger{% else %}btn-success{% endif %} mt-2">
+            <i class="bi bi-{% if negocio.activo %}pause{% else %}play{% endif %}"></i>
+            {% if negocio.activo %}Apagar Bot{% else %}Encender Bot{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-robot"></i> Contexto de la IA
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">Este texto define cómo la IA responde a los clientes. Puedes editar las reglas y el comportamiento del bot.</p>
+        <form method="post" action="/cliente/configuracion/reglas">
+          <div class="mb-3">
+            <textarea name="reglas" class="form-control font-monospace" rows="15">{{ reglas or '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save"></i> Guardar contexto</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

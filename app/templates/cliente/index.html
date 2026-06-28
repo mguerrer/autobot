@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Cliente{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h2><i class="bi bi-building"></i> {{ negocio.nombre }}</h2>
+    <p class="text-muted">RUT: {{ negocio.rut }}</p>
+  </div>
+  <div class="col-auto">
+    <span class="badge fs-6 {% if negocio.activo %}bg-success{% else %}bg-danger{% endif %}">
+      {% if negocio.activo %}Activo{% else %}Inactivo{% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <i class="bi bi-whatsapp fs-1"></i>
+        <h5>Número WhatsApp</h5>
+        <p class="fs-5">{{ negocio.bot_whatsapp }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <a href="/cliente/conversaciones" class="text-decoration-none">
+      <div class="card">
+        <div class="card-body text-center">
+          <i class="bi bi-chat-dots fs-1"></i>
+          <h5>Conversaciones</h5>
+          <p class="text-muted">Ver historial de chats</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/cliente/configuracion" class="text-decoration-none">
+      <div class="card">
+        <div class="card-body text-center">
+          <i class="bi bi-gear fs-1"></i>
+          <h5>Configuración</h5>
+          <p class="text-muted">Editar contexto IA y estado del bot</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+{% if reglas %}
+<div class="card mt-4">
+  <div class="card-header">
+    <i class="bi bi-info-circle"></i> Contexto actual de la IA
+  </div>
+  <div class="card-body">
+    <pre class="mb-0 text-light" style="white-space: pre-wrap;">{{ reglas }}</pre>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

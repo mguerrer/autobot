@@ -20,3 +20,5 @@ async def init_db():
     async with engine.begin() as conn:
         from app.models import Base
         await conn.run_sync(Base.metadata.create_all)
+    from app.auth import seed_default_users
+    await seed_default_users()

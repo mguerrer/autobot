@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Conversación{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <a href="/cliente/conversaciones" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-person-circle"></i> {{ contacto_nombre or contacto_telefono }}</span>
+    <span class="text-muted small">{{ negocio_nombre }}</span>
+  </div>
+  <div class="card-body" style="max-height: 60vh; overflow-y: auto;">
+    {% for m in mensajes %}
+    <div class="mb-3 {% if m.rol == 'assistant' %}text-end{% endif %}">
+      <div class="d-inline-block p-3 rounded-3 {% if m.rol == 'assistant' %}bg-primary text-white{% else %}bg-dark text-light{% endif %}" style="max-width: 75%;">
+        <div class="small">{{ m.contenido }}</div>
+        <div class="small opacity-50 mt-1">{{ m.created_at.strftime('%d/%m %H:%M') if m.created_at else '' }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
