@@ -16,7 +16,7 @@ from app.config import settings
 from app.database import async_session
 from app.models import Usuario
 
-SECRET_KEY = settings.ollama_url + "::autobot-session-secret"
+SECRET_KEY = settings.secret_key
 COOKIE_NAME = "autobot_session"
 SESSION_TTL = timedelta(hours=24)
 
