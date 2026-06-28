@@ -1,6 +1,51 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "name": "Autobot",
-  "description": "Plataforma multi-tenant de chatbots para WhatsApp con IA vía Ollama",
-  "git": true
+  "model": "ollama/qwen2.5-coder:3b",
+  "small_model": "ollama/llama3.2:3b",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "llama3.1:8b": {
+          "name": "Llama 3.1 8B",
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        },
+        "llama3.2:3b": {
+          "name": "Llama 3.2 3B",
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        },
+        "qwen2.5-coder:3b": {
+          "name": "Qwen 2.5 Coder 3B",
+          "limit": {
+            "context": 32768,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+  "permission": {
+    "bash": "allow",
+    "edit": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "write": "allow",
+    "task": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "question": "allow",
+    "todowrite": "allow",
+    "external_directory": "allow"
+  }
 }
