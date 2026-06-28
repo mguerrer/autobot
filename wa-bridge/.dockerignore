@@ -1,0 +1,5 @@
+.git
+sessions
+auth_test
+run.sh
+*.log

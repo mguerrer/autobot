@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "autobot.name" . }}-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "autobot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.api.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.api.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "autobot.name" . }}-api
+                port:
+                  number: {{ .Values.api.port }}

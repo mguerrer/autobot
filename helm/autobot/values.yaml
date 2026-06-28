@@ -1,0 +1,41 @@
+# Global
+replicas: 2
+namespace: default
+imagePullPolicy: IfNotPresent
+
+api:
+  image: autobot-api:latest
+  port: 8000
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    OLLAMA_URL: http://ollama:11434
+  ingress:
+    host: api.autobot.local
+    path: /
+
+waBridge:
+  image: autobot-wa-bridge:latest
+  port: 9090
+  replicas: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    WEBHOOK_URL: http://autobot-api:8000/webhook/baileys
+  ingress:
+    host: bridge.autobot.local
+    path: /
+
+ingress:
+  className: traefik

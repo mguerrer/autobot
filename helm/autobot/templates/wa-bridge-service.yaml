@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "autobot.name" . }}-wa-bridge
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "autobot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: wa-bridge
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "autobot.name" . }}-wa-bridge
+  ports:
+    - protocol: TCP
+      port: {{ .Values.waBridge.port }}
+      targetPort: {{ .Values.waBridge.port }}
+  type: ClusterIP

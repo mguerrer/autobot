@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "autobot.name" . }}-wa-bridge
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "autobot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: wa-bridge
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.waBridge.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.waBridge.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "autobot.name" . }}-wa-bridge
+                port:
+                  number: {{ .Values.waBridge.port }}

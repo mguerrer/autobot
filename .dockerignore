@@ -1,0 +1,8 @@
+venv
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+node_modules
+wa-bridge/node_modules
