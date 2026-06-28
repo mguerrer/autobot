@@ -2,50 +2,129 @@
 {% block title %}Configuración{% endblock %}
 {% block content %}
 <h2><i class="bi bi-gear"></i> Configuración del Bot</h2>
-<p class="text-muted">{{ negocio.nombre }}</p>
+<p class="text-muted">{{ negocio.nombre }} · {{ negocio.bot_whatsapp }}</p>
 
 <div class="row g-4">
-  <div class="col-md-6">
+  <div class="col-lg-8">
     <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-robot"></i> Instrucciones para la IA</span>
+        <span class="badge bg-info">Markdown</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small">
+          Este texto define cómo la IA responde a tus clientes.
+          Puedes editar libremente las reglas, horarios, productos, precios y tono de voz.
+          Usa formato Markdown para dar estructura.
+        </p>
+        <form method="post" action="/cliente/configuracion/reglas">
+          <div class="mb-3">
+            <textarea name="reglas" id="editor">{{ reglas or '' }}</textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1">
+              <i class="bi bi-save"></i> Guardar instrucciones
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+              <i class="bi bi-x-lg"></i> Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-4">
       <div class="card-header">
         <i class="bi bi-power"></i> Estado del Bot
       </div>
-      <div class="card-body text-center">
-        <div class="fs-1 mb-3">
-          {% if negocio.activo %}
-          <i class="bi bi-toggle-on text-success" style="font-size: 3rem;"></i>
-          {% else %}
-          <i class="bi bi-toggle-off text-danger" style="font-size: 3rem;"></i>
-          {% endif %}
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="mb-1 {% if negocio.activo %}text-success{% else %}text-danger{% endif %}">
+              <i class="bi bi-{% if negocio.activo %}toggle-on{% else %}toggle-off{% endif %} fs-4"></i>
+              Bot {% if negocio.activo %}Activado{% else %}Desactivado{% endif %}
+            </h5>
+            <p class="text-muted small mb-0">
+              {% if negocio.activo %}
+              El bot responde automáticamente a los mensajes de tus clientes.
+              {% else %}
+              El bot no responde automáticamente. Los mensajes se almacenan pero no se contestan.
+              {% endif %}
+            </p>
+          </div>
+          <form method="post" action="/cliente/configuracion/toggle">
+            <button type="submit" class="btn btn-lg {% if negocio.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+              <i class="bi bi-{% if negocio.activo %}pause-fill{% else %}play-fill{% endif %}"></i>
+              {% if negocio.activo %}Apagar{% else %}Encender{% endif %}
+            </button>
+          </form>
         </div>
-        <h5 class="{% if negocio.activo %}text-success{% else %}text-danger{% endif %}">
-          Bot {% if negocio.activo %}Activado{% else %}Desactivado{% endif %}
-        </h5>
-        <form method="post" action="/cliente/configuracion/toggle">
-          <button type="submit" class="btn btn-lg {% if negocio.activo %}btn-danger{% else %}btn-success{% endif %} mt-2">
-            <i class="bi bi-{% if negocio.activo %}pause{% else %}play{% endif %}"></i>
-            {% if negocio.activo %}Apagar Bot{% else %}Encender Bot{% endif %}
-          </button>
-        </form>
       </div>
     </div>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-lg-4">
     <div class="card">
       <div class="card-header">
-        <i class="bi bi-robot"></i> Contexto de la IA
+        <i class="bi bi-info-circle"></i> Reglas Generales
       </div>
-      <div class="card-body">
-        <p class="text-muted small">Este texto define cómo la IA responde a los clientes. Puedes editar las reglas y el comportamiento del bot.</p>
-        <form method="post" action="/cliente/configuracion/reglas">
-          <div class="mb-3">
-            <textarea name="reglas" class="form-control font-monospace" rows="15">{{ reglas or '' }}</textarea>
-          </div>
-          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save"></i> Guardar contexto</button>
-        </form>
+      <div class="card-body p-0">
+        <div class="p-3 text-muted small" style="max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8rem;">
+          {{ reglas_generales or 'Sin reglas generales configuradas.' }}
+        </div>
+      </div>
+      <div class="card-footer text-muted small">
+        <i class="bi bi-lightbulb"></i> Estas reglas aplican a todos los negocios. No se pueden editar aquí.
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">
+        <i class="bi bi-question-circle"></i> Formato Markdown
+      </div>
+      <div class="card-body small">
+        <table class="table table-sm table-borderless mb-0">
+          <tr><td><code># Título</code></td><td>Encabezado</td></tr>
+          <tr><td><code>**texto**</code></td><td>Negrita</td></tr>
+          <tr><td><code>- item</code></td><td>Lista</td></tr>
+          <tr><td><code>[texto](url)</code></td><td>Enlace</td></tr>
+          <tr><td><code>---</code></td><td>Separador</td></tr>
+        </table>
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+  const editor = new EasyMDE({
+    element: document.getElementById('editor'),
+    autofocus: false,
+    spellChecker: false,
+    forceSync: true,
+    minHeight: '400px',
+    maxHeight: '600px',
+    placeholder: 'Escribe aquí las instrucciones para tu bot...',
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'unordered-list', 'ordered-list', '|',
+      'code', 'quote', '|',
+      'link', 'table', '|',
+      'preview', 'side-by-side', 'fullscreen', '|',
+      'guide'
+    ],
+    promptURLs: true,
+    renderingConfig: {
+      singleLineBreaks: true,
+      codeSyntaxHighlighting: true,
+    },
+  });
+
+  document.querySelector('form').addEventListener('submit', function() {
+    editor.toTextArea();
+  });
+</script>
 {% endblock %}

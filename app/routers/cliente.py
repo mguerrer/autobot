@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje
 from app.services.rule_engine import (
     cargar_negocios, cargar_rubros, guardar_negocios,
-    cargar_reglas_negocio, DATOS_DIR,
+    cargar_reglas_generales, cargar_reglas_negocio, DATOS_DIR,
 )
 from app.auth import (
     get_session, ensure_authenticated, has_role, user_context,
@@ -132,10 +132,12 @@ async def cliente_config(request: Request):
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
     reglas = cargar_reglas_negocio(rut)
+    reglas_generales = cargar_reglas_generales()
 
     return templates.TemplateResponse(request, "cliente/configuracion.html", {
         "negocio": negocio,
         "reglas": reglas,
+        "reglas_generales": reglas_generales,
         **user_context(request),
         "pagina": "configuracion",
     })
