@@ -29,6 +29,9 @@
           <li class="nav-item">
             <a class="nav-link" href="/admin/chats"><i class="bi bi-chat-dots"></i> Chats</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/aviso-cuenta-personal"><i class="bi bi-exclamation-triangle"></i> Aviso WhatsApp</a>
+          </li>
           {% endif %}
         </ul>
         <ul class="navbar-nav">
@@ -38,6 +41,8 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <li><span class="dropdown-item-text text-muted small">Rol: {{ user.role if user else '—' }}</span></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/ayuda"><i class="bi bi-question-circle"></i> Ayuda</a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="/admin/logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
             </ul>

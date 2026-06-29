@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api", tags=["api"])
 
 @router.get("/negocios")
 async def listar_negocios():
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios()
     rubros = {r["id"]: r["nombre"] for r in cargar_rubros()}
     result = []
     for n in negocios:
@@ -34,7 +34,8 @@ async def listar_conversaciones(
     estado: str = Query(""),
     db: AsyncSession = Depends(get_db),
 ):
-    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+    negocios_list = await cargar_negocios()
+    negocios = {n["rut"]: n["nombre"] for n in negocios_list}
     stmt = select(
         Conversacion,
         Contacto.telefono,

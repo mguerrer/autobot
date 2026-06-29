@@ -76,7 +76,8 @@ async def cliente_client(client, session_factory):
 
 
 async def _seed_db(session_factory, datos_dir):
-    from app.models import ReglaGeneral, ReglaNegocio, Usuario
+    import json
+    from app.models import ReglaGeneral, ReglaNegocio, Usuario, Negocio, NumeroWhatsApp
 
     async with session_factory() as session:
         reglas_gral_path = datos_dir / "reglas_generales.md"
@@ -109,6 +110,38 @@ async def _seed_db(session_factory, datos_dir):
                     role=role,
                     negocio_rut=negocio_rut,
                 ))
+
+        negocios_path = datos_dir / "negocios.json"
+        if negocios_path.exists():
+            negocios_data = json.loads(negocios_path.read_text(encoding="utf-8"))
+            for nd in negocios_data:
+                exists = await session.execute(select(Negocio).where(Negocio.rut == nd["rut"]))
+                if exists.scalar_one_or_none():
+                    continue
+                neg = Negocio(
+                    rut=nd["rut"],
+                    nombre=nd.get("nombre", ""),
+                    rubro_id=nd.get("rubro_id", 0),
+                    dueno_nombre=nd.get("dueno_nombre", ""),
+                    dueno_telefono=nd.get("dueno_telefono", ""),
+                    activo=nd.get("activo", True),
+                )
+                session.add(neg)
+                await session.flush()
+                num_exists = await session.execute(
+                    select(NumeroWhatsApp).where(
+                        NumeroWhatsApp.negocio_rut == nd["rut"],
+                        NumeroWhatsApp.numero == nd.get("bot_whatsapp", ""),
+                    )
+                )
+                if nd.get("bot_whatsapp") and not num_exists.scalar_one_or_none():
+                    session.add(NumeroWhatsApp(
+                        negocio_rut=nd["rut"],
+                        numero=nd["bot_whatsapp"],
+                        tipo_cuenta="personal",
+                        phone_number_id=nd.get("phone_number_id", ""),
+                        verify_token=nd.get("verify_token", ""),
+                    ))
         await session.commit()
 
 

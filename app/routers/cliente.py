@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje
 from app.services.rule_engine import (
-    cargar_negocios, guardar_negocios,
+    cargar_negocios_db, guardar_negocios_db,
     cargar_reglas_generales, cargar_reglas_negocio, guardar_reglas_negocio,
+    cargar_numeros_whatsapp, eliminar_numero_whatsapp,
+    obtener_aviso_cuenta_personal, marcar_aviso_personal_visto, aviso_personal_fue_visto,
 )
 from app.auth import (
     get_session, ensure_authenticated, has_role, user_context,
@@ -30,15 +32,17 @@ async def cliente_index(request: Request):
     if not has_role(session, "cliente"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
     reglas = await cargar_reglas_negocio(rut)
+    numeros = await cargar_numeros_whatsapp(rut)
 
     return templates.TemplateResponse(request, "cliente/index.html", {
         "negocio": negocio,
+        "numeros": numeros,
         "reglas": reglas,
         **user_context(request),
         "pagina": "dashboard",
@@ -51,7 +55,8 @@ async def cliente_conversaciones(request: Request, db: AsyncSession = Depends(ge
     if not has_role(session, "cliente"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
-    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+    negocios_list = await cargar_negocios_db()
+    negocios = {n["rut"]: n["nombre"] for n in negocios_list}
 
     result = await db.execute(
         select(Conversacion, Contacto.telefono, Contacto.nombre)
@@ -88,7 +93,8 @@ async def cliente_chat_detail(request: Request, conv_id: int, db: AsyncSession =
     if not has_role(session, "cliente"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
-    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+    negocios_list = await cargar_negocios_db()
+    negocios = {n["rut"]: n["nombre"] for n in negocios_list}
 
     result = await db.execute(
         select(Conversacion, Contacto)
@@ -125,16 +131,18 @@ async def cliente_config(request: Request):
     if not has_role(session, "cliente"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
     reglas = await cargar_reglas_negocio(rut)
     reglas_generales = await cargar_reglas_generales()
+    numeros = await cargar_numeros_whatsapp(rut)
 
     return templates.TemplateResponse(request, "cliente/configuracion.html", {
         "negocio": negocio,
+        "numeros": numeros,
         "reglas": reglas,
         "reglas_generales": reglas_generales,
         **user_context(request),
@@ -163,11 +171,68 @@ async def cliente_toggle_bot(request: Request):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
 
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
     negocio["activo"] = not negocio.get("activo", True)
-    guardar_negocios(negocios)
+    await guardar_negocios_db(negocios)
     return RedirectResponse(url="/cliente/configuracion", status_code=303)
+
+
+@router.get("/conexiones", response_class=HTMLResponse)
+async def cliente_conexiones(request: Request):
+    session = ensure_authenticated(request)
+    if not has_role(session, "cliente"):
+        return HTMLResponse("Acceso denegado", status_code=403)
+    rut = session.get("negocio_rut", "")
+    negocios = await cargar_negocios_db()
+    negocio = next((n for n in negocios if n["rut"] == rut), None)
+    if not negocio:
+        return HTMLResponse("Negocio no encontrado", status_code=404)
+
+    numeros = await cargar_numeros_whatsapp(rut)
+    tiene_personal = any(w["tipo_cuenta"] == "personal" for w in numeros)
+    aviso = await obtener_aviso_cuenta_personal()
+    aviso_visto = await aviso_personal_fue_visto(rut)
+
+    return templates.TemplateResponse(request, "cliente/conexiones.html", {
+        "negocio": negocio,
+        "numeros": numeros,
+        "tiene_personal": tiene_personal,
+        "aviso_cuenta_personal": aviso,
+        "aviso_visto": aviso_visto,
+        **user_context(request),
+        "pagina": "conexiones",
+    })
+
+
+@router.post("/conexiones/eliminar")
+async def cliente_eliminar_numero(request: Request):
+    session = ensure_authenticated(request)
+    if not has_role(session, "cliente"):
+        return HTMLResponse("Acceso denegado", status_code=403)
+    rut = session.get("negocio_rut", "")
+
+    form = await request.form()
+    numero = form.get("numero", "").strip()
+    if not numero:
+        return RedirectResponse(url="/cliente/conexiones", status_code=303)
+
+    numeros = await cargar_numeros_whatsapp(rut)
+    if len(numeros) <= 1:
+        return HTMLResponse("No puedes eliminar el único número activo", status_code=400)
+
+    await eliminar_numero_whatsapp(rut, numero)
+    return RedirectResponse(url="/cliente/conexiones", status_code=303)
+
+
+@router.post("/conexiones/ignorar-aviso")
+async def cliente_ignorar_aviso(request: Request):
+    session = ensure_authenticated(request)
+    if not has_role(session, "cliente"):
+        return HTMLResponse("Acceso denegado", status_code=403)
+    rut = session.get("negocio_rut", "")
+    await marcar_aviso_personal_visto(rut)
+    return RedirectResponse(url="/cliente/conexiones", status_code=303)

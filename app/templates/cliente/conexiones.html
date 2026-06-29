@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Conexiones WhatsApp{% endblock %}
+{% block content %}
+<h2><i class="bi bi-whatsapp"></i> Conexiones WhatsApp</h2>
+<p class="text-muted">{{ negocio.nombre }}</p>
+
+{% if tiene_personal and not aviso_visto %}
+<div class="alert alert-warning d-flex align-items-start gap-3" role="alert">
+  <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
+  <div class="flex-grow-1">
+    <h5 class="alert-heading">⚠️ Advertencia: Cuenta Personal</h5>
+    <p class="mb-0" style="white-space: pre-line;">{{ aviso_cuenta_personal }}</p>
+  </div>
+  <form method="post" action="/cliente/conexiones/ignorar-aviso" class="flex-shrink-0">
+    <button type="submit" class="btn btn-outline-dark btn-sm">
+      <i class="bi bi-check-lg"></i> Entendido
+    </button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-phone"></i> Números asociados</span>
+    <span class="badge bg-secondary">{{ numeros|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    {% if numeros %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for w in numeros %}
+          <tr>
+            <td><code>{{ w.numero }}</code></td>
+            <td>
+              {% if w.tipo_cuenta == 'personal' %}
+              <span class="badge bg-warning text-dark">Personal ⚠️</span>
+              {% else %}
+              <span class="badge bg-success">Business</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if w.activo %}
+              <span class="badge bg-success">Activo</span>
+              {% else %}
+              <span class="badge bg-secondary">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if numeros|length > 1 %}
+              <form method="post" action="/cliente/conexiones/eliminar" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar {{ w.numero }}?')">
+                <input type="hidden" name="numero" value="{{ w.numero }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="p-4 text-center text-muted">
+      <i class="bi bi-phone fs-1"></i>
+      <p class="mt-2">No hay números WhatsApp configurados para este negocio.</p>
+      <p class="small">Contacta al administrador para agregar números.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="/cliente/" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Volver al Dashboard
+  </a>
+</div>
+{% endblock %}

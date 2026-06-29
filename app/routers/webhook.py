@@ -46,7 +46,7 @@ async def webhook_meta(request: Request):
                 if not from_number or not text:
                     continue
 
-                bot_whatsapp = _buscar_bot_por_phone_number_id(phone_number_id)
+                bot_whatsapp = await _buscar_bot_por_phone_number_id(phone_number_id)
                 if not bot_whatsapp:
                     logger.warning(f"Phone Number ID {phone_number_id} no reconocido")
                     continue
@@ -69,7 +69,7 @@ async def verificar_webhook(request: Request):
     challenge = request.query_params.get("hub.challenge")
     if mode != "subscribe" or not token:
         raise HTTPException(status_code=403, detail="Verification failed")
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios()
     for n in negocios:
         if n.get("verify_token") == token:
             return int(challenge) if challenge and challenge.isdigit() else challenge
@@ -91,8 +91,9 @@ async def webhook_baileys(payload: WebhookIn):
     return {"status": "ok"}
 
 
-def _buscar_bot_por_phone_number_id(phone_number_id: str) -> str | None:
-    for n in cargar_negocios():
+async def _buscar_bot_por_phone_number_id(phone_number_id: str) -> str | None:
+    negocios = await cargar_negocios()
+    for n in negocios:
         if n.get("phone_number_id") == phone_number_id:
             return n.get("bot_whatsapp")
     return None

@@ -61,19 +61,21 @@ class TestRubros:
 
 
 class TestNegocios:
-    def test_cargar_negocios(self):
-        negocios = cargar_negocios()
+    pytestmark = pytest.mark.asyncio
+
+    async def test_cargar_negocios(self):
+        negocios = await cargar_negocios()
         assert len(negocios) >= 3
 
-    def test_pizzeria_napoli(self):
-        negocios = cargar_negocios()
+    async def test_pizzeria_napoli(self):
+        negocios = await cargar_negocios()
         pizzeria = next(n for n in negocios if n["rut"] == "76.123.456-7")
         assert pizzeria["nombre"] == "Pizzería Napoli"
         assert pizzeria["rubro_id"] == 1
         assert pizzeria["activo"] is True
 
-    def test_techsupport(self):
-        negocios = cargar_negocios()
+    async def test_techsupport(self):
+        negocios = await cargar_negocios()
         tech = next(n for n in negocios if n["rut"] == "77.789.012-3")
         assert tech["nombre"] == "TechSupport Ltda."
         assert tech["rubro_id"] == 7
@@ -81,21 +83,23 @@ class TestNegocios:
 
 
 class TestBuscarNegocio:
-    def test_buscar_por_whatsapp_existente(self):
-        negocio = buscar_negocio_por_whatsapp("+56998765432")
+    pytestmark = pytest.mark.asyncio
+
+    async def test_buscar_por_whatsapp_existente(self):
+        negocio = await buscar_negocio_por_whatsapp("+56998765432")
         assert negocio is not None
         assert negocio["nombre"] == "Pizzería Napoli"
 
-    def test_buscar_por_whatsapp_inexistente(self):
-        negocio = buscar_negocio_por_whatsapp("+99999999999")
+    async def test_buscar_por_whatsapp_inexistente(self):
+        negocio = await buscar_negocio_por_whatsapp("+99999999999")
         assert negocio is None
 
-    def test_buscar_negocio_inactivo(self):
-        negocio = buscar_negocio_por_whatsapp("+56900000000")
+    async def test_buscar_negocio_inactivo(self):
+        negocio = await buscar_negocio_por_whatsapp("+56900000000")
         assert negocio is None
 
-    def test_buscar_techsupport(self):
-        negocio = buscar_negocio_por_whatsapp("+56987654321")
+    async def test_buscar_techsupport(self):
+        negocio = await buscar_negocio_por_whatsapp("+56987654321")
         assert negocio is not None
         assert negocio["rut"] == "77.789.012-3"
 

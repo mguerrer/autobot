@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import async_session
 from app.models import Contacto, Conversacion, Mensaje
-from app.services.rule_engine import construir_prompt_sistema, buscar_negocio_por_whatsapp
+from app.services.rule_engine import construir_prompt_sistema, buscar_negocio_por_whatsapp_db as buscar_negocio_por_whatsapp
 from app.services.ollama_service import generar_respuesta
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ def get_provider() -> WhatsAppProvider:
 
 
 async def procesar_mensaje_entrante(bot_whatsapp: str, from_number: str, texto: str, message_id: str = ""):
-    negocio = buscar_negocio_por_whatsapp(bot_whatsapp)
+    negocio = await buscar_negocio_por_whatsapp(bot_whatsapp)
     if not negocio:
         logger.warning(f"Bot {bot_whatsapp} no encontrado o inactivo")
         return

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Aviso Cuenta Personal{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/admin/">Dashboard</a></li>
+        <li class="breadcrumb-item active">Aviso Cuenta Personal</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-exclamation-triangle"></i> Aviso de Cuenta Personal WhatsApp</div>
+      <div class="card-body">
+        <p class="text-muted">
+          Este mensaje se muestra a los clientes cuando tienen al menos un número WhatsApp configurado como
+          <span class="badge bg-warning text-dark">Personal</span>.
+        </p>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Texto del aviso</label>
+            <textarea class="form-control" name="aviso" rows="6">{{ aviso }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> Guardar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

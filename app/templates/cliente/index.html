@@ -18,8 +18,17 @@
     <div class="card">
       <div class="card-body text-center">
         <i class="bi bi-whatsapp fs-1"></i>
-        <h5>Número WhatsApp</h5>
-        <p class="fs-5">{{ negocio.bot_whatsapp }}</p>
+        <h5>WhatsApp</h5>
+        {% if numeros %}
+          {% for w in numeros %}
+          <span class="badge {% if w.tipo_cuenta == 'personal' %}bg-warning text-dark{% else %}bg-success{% endif %} mb-1">
+            {{ w.numero }} · {{ w.tipo_cuenta }}
+          </span><br>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">Sin números configurados</p>
+        {% endif %}
+        <a href="/cliente/conexiones" class="btn btn-sm btn-outline-primary mt-2">Gestionar</a>
       </div>
     </div>
   </div>

@@ -9,8 +9,10 @@ from app.config import settings
 from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje, Usuario
 from app.services.rule_engine import (
-    cargar_negocios, cargar_rubros, guardar_negocios,
+    cargar_negocios_db, cargar_rubros, guardar_negocios_db,
     cargar_reglas_negocio, guardar_reglas_negocio,
+    cargar_numeros_whatsapp, guardar_numero_whatsapp, eliminar_numero_whatsapp,
+    obtener_aviso_cuenta_personal, guardar_aviso_cuenta_personal,
 )
 from app.auth import (
     get_session, create_session, hash_password, verify_password,
@@ -51,7 +53,7 @@ async def logout():
 @router.get("/", response_class=HTMLResponse)
 async def admin_index(request: Request, db: AsyncSession = Depends(get_db)):
     session = ensure_authenticated(request)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     rubros = {r["id"]: r["nombre"] for r in cargar_rubros()}
 
     if has_role(session, "cliente"):
@@ -88,7 +90,7 @@ async def admin_index(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/negocios", response_class=HTMLResponse)
 async def admin_negocios(request: Request):
     ensure_authenticated(request)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     session = get_session(request)
     if has_role(session, "cliente"):
         rut = session.get("negocio_rut", "")
@@ -106,7 +108,7 @@ async def admin_negocio_detail(request: Request, rut: str, db: AsyncSession = De
     session = ensure_authenticated(request)
     if has_role(session, "cliente") and session.get("negocio_rut") != rut:
         return HTMLResponse("Acceso denegado", status_code=403)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     rubros = {rub["id"]: rub for rub in cargar_rubros()}
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
@@ -142,7 +144,7 @@ async def admin_negocio_editar(request: Request, rut: str):
     session = ensure_authenticated(request)
     if has_role(session, "cliente") and session.get("negocio_rut") != rut:
         return HTMLResponse("Acceso denegado", status_code=403)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     rubros = cargar_rubros()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
@@ -161,7 +163,7 @@ async def admin_negocio_guardar(request: Request, rut: str):
     session = ensure_authenticated(request)
     if has_role(session, "cliente") and session.get("negocio_rut") != rut:
         return HTMLResponse("Acceso denegado", status_code=403)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     rubros = cargar_rubros()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
@@ -180,7 +182,7 @@ async def admin_negocio_guardar(request: Request, rut: str):
         pass
     negocio["activo"] = form.get("activo") == "on"
 
-    guardar_negocios(negocios)
+    await guardar_negocios_db(negocios)
 
     reglas_texto = form.get("reglas_bot", "").strip()
     await guardar_reglas_negocio(rut, reglas_texto)
@@ -193,19 +195,19 @@ async def admin_negocio_toggle(request: Request, rut: str):
     session = ensure_authenticated(request)
     if has_role(session, "cliente") and session.get("negocio_rut") != rut:
         return HTMLResponse("Acceso denegado", status_code=403)
-    negocios = cargar_negocios()
+    negocios = await cargar_negocios_db()
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
     negocio["activo"] = not negocio["activo"]
-    guardar_negocios(negocios)
+    await guardar_negocios_db(negocios)
     return RedirectResponse(url="/admin/negocios", status_code=303)
 
 
 @router.get("/chats", response_class=HTMLResponse)
 async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
     session = ensure_authenticated(request)
-    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+    negocios = {n["rut"]: n["nombre"] for n in await cargar_negocios_db()}
     stmt = (
         select(Conversacion, Contacto.telefono, Contacto.nombre)
         .join(Contacto, Conversacion.contacto_id == Contacto.id)
@@ -240,7 +242,7 @@ async def admin_chats(request: Request, db: AsyncSession = Depends(get_db)):
 @router.get("/chats/{conv_id}", response_class=HTMLResponse)
 async def admin_chat_detail(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
     session = ensure_authenticated(request)
-    negocios = {n["rut"]: n["nombre"] for n in cargar_negocios()}
+    negocios = {n["rut"]: n["nombre"] for n in await cargar_negocios_db()}
 
     result = await db.execute(
         select(Conversacion, Contacto)
@@ -306,6 +308,25 @@ async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession 
     await provider.send_message(contacto.telefono, texto, "")
 
     return RedirectResponse(url=f"/admin/chats/{conv_id}", status_code=303)
+
+
+@router.get("/aviso-cuenta-personal", response_class=HTMLResponse)
+async def admin_aviso_cuenta_personal(request: Request):
+    session = ensure_authenticated(request)
+    aviso = await obtener_aviso_cuenta_personal()
+    return templates.TemplateResponse(request, "admin/aviso_cuenta_personal.html", {
+        "aviso": aviso,
+        **user_context(request),
+    })
+
+
+@router.post("/aviso-cuenta-personal")
+async def admin_guardar_aviso_cuenta_personal(request: Request):
+    session = ensure_authenticated(request)
+    form = await request.form()
+    texto = form.get("aviso", "").strip()
+    await guardar_aviso_cuenta_personal(texto)
+    return RedirectResponse(url="/admin/aviso-cuenta-personal", status_code=303)
 
 
 @router.get("/wa-bridge", response_class=HTMLResponse)

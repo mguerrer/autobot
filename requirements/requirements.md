@@ -18,16 +18,26 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 - Clave secreta configurable via `SECRET_KEY` en `.env`
 
 ### 1.2 Panel Cliente (`/cliente/`)
-- Dashboard con info del negocio (nombre, RUT, estado, número WhatsApp)
+- Dashboard con info del negocio (nombre, RUT, estado, números WhatsApp)
 - Lista de conversaciones del negocio
 - Vista detalle de conversación con mensajes
 - Editar contexto de la IA (reglas de negocio en Markdown)
 - Encender / Apagar el bot por negocio
+- **Gestión de conexiones WhatsApp**: lista de números asociados al negocio, cada uno con:
+  - Número telefónico
+  - Tipo de cuenta: **Personal** ⚠️ o **Business**
+  - Estado de conexión (conectado/desconectado vía WA Bridge)
+  - Botón eliminar (solo si hay más de un número activo)
+- **Advertencia de cuenta personal**: si algún número usa cuenta personal, se muestra banner:
+  > "Si usas una cuenta personal de WhatsApp para tu bot, Meta puede **bloquear o banear** tu número. Te recomendamos usar una **cuenta de negocio (API oficial de Meta)**."
+- Texto de advertencia configurable por el admin
 
 ### 1.3 Panel Admin (`/admin/`)
 - Dashboard con cards de negocio y últimas conversaciones
 - CRUD de negocios (listar, detalle, editar, toggle activo)
 - **Editar reglas del bot por negocio** (editor Markdown con EasyMDE en página de editar negocio)
+- **Gestión de números WhatsApp por negocio**: agregar/eliminar múltiples números, configurar tipo de cuenta (personal/business), verify token y Phone Number ID
+- **Editar mensaje de advertencia** para cuentas personales (texto configurable que se muestra al cliente)
 - Lista de chats (sin contenido para admin)
 - Gestión de WA Bridge (solo clientes)
 - Breadcrumbs de navegación
@@ -35,6 +45,7 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 ### 1.4 Multi-Tenancy
 - Cada negocio tiene un RUT único como identificador
 - Contactos, conversaciones y mensajes asociados por `negocio_rut`
+- **Cada negocio puede tener múltiples números WhatsApp** (relación 1:N vía tabla `NumeroWhatsApp`)
 - Clientes ven solo sus datos propios
 - Admin ve todo (excepto contenido de conversaciones)
 
@@ -42,6 +53,9 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 - **Mock**: log a consola (dev)
 - **Meta Cloud API**: webhook con verificación de challenge
 - **Baileys**: bridge Node.js multi-sesión (Express + @whiskeysockets/baileys)
+- **Números WhatsApp**: cada negocio puede tener múltiples números, cada uno con:
+  - Tipo **Personal** (usa Baileys/WhatsApp Web, con advertencia de baneo)
+  - Tipo **Business** (usa Meta Cloud API, sin advertencia)
 - Webhooks: `POST /webhook/whatsapp`, `POST /webhook/meta`, `POST /webhook/baileys`
 - Verificación: `GET /webhook/whatsapp` con `hub.mode`, `hub.verify_token`, `hub.challenge`
 
@@ -53,9 +67,10 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 
 ### 1.7 Base de Datos
 - SQLite vía SQLAlchemy async + aiosqlite
-- Modelos: `Usuario`, `Contacto`, `Conversacion`, `Mensaje`, `ReglaGeneral`, `ReglaNegocio`
+- Modelos: `Usuario`, `Contacto`, `Conversacion`, `Mensaje`, `ReglaGeneral`, `ReglaNegocio`, `Negocio`, `NumeroWhatsApp`
 - Reglas de negocio persistentes en DB (no en archivos planos), compartidas entre réplicas K8s
 - Migración automática de reglas desde archivos a DB al iniciar (solo si tabla vacía)
+- Migración automática de negocios y números WhatsApp desde `negocios.json` a DB
 - Seed automático de usuarios por defecto
 
 ### 1.8 Pruebas Automatizadas
@@ -125,6 +140,9 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 | `/cliente/configuracion`    | GET    | sí       | Configuración del bot              |
 | `/cliente/configuracion/reglas` | POST | sí    | Guardar contexto IA                |
 | `/cliente/configuracion/toggle` | POST | sí    | Encender/apagar bot                |
+| `/cliente/conexiones`           | GET  | sí       | Gestión de conexiones WhatsApp     |
+| `/cliente/conexiones/eliminar`  | POST | sí       | Eliminar número WhatsApp propio    |
+| `/admin/aviso-cuenta-personal`  | GET/POST | sí  | Editar texto de advertencia        |
 | `/webhook/whatsapp`         | GET    | —        | Verificación Meta                  |
 | `/webhook/whatsapp`         | POST   | —        | Webhook genérico                   |
 | `/webhook/meta`             | GET    | —        | Verificación Meta                  |

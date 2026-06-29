@@ -24,3 +24,5 @@ async def init_db():
     await seed_default_users()
     from app.services.rule_engine import migrar_reglas_de_archivos_a_db
     await migrar_reglas_de_archivos_a_db()
+    from app.services.rule_engine import migrar_negocios_de_json_a_db
+    await migrar_negocios_de_json_a_db()

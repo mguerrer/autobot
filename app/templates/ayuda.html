@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Ayuda{% endblock %}
+{% block content %}
+<h2><i class="bi bi-question-circle"></i> Centro de Ayuda</h2>
+<p class="text-muted">Todo lo que necesitas saber para usar Autobot.</p>
+
+<div class="row g-4 mt-2">
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-info-circle"></i> ¿Qué es Autobot?</div>
+      <div class="card-body small">
+        <p>Autobot es una plataforma multi-tenant que permite crear bots de atención al cliente
+        impulsados por inteligencia artificial (Ollama) para WhatsApp.</p>
+        <p>Cada negocio puede tener su propio bot con reglas personalizadas: horarios,
+        productos, precios, tono de voz y más.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-whatsapp"></i> Conectar WhatsApp</div>
+      <div class="card-body small">
+        <p>El bot necesita un número de WhatsApp para funcionar. Hay dos tipos de cuenta:</p>
+        <h6 class="text-warning mt-3">📱 Cuenta Personal ⚠️</h6>
+        <p>Usa WhatsApp Web (Baileys). <strong>Meta no permite</strong> automatización
+        en cuentas personales. Si detectan actividad automatizada pueden
+        <strong>suspender o banear</strong> tu número. Recomendado solo para pruebas.</p>
+        <h6 class="text-success mt-3">🏢 Cuenta Business ✅</h6>
+        <p>Usa Meta Cloud API (oficial). Diseñada para uso comercial. Sin riesgo de baneo.
+        Requiere configuración adicional: Phone Number ID y Verify Token.</p>
+        <h6 class="mt-3">📷 Escanear QR</h6>
+        <p>Para cuentas personales, ve a <strong>WA Bridge</strong> en el menú,
+        escanea el código QR con WhatsApp > Dispositivos vinculados > Vincular dispositivo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-people"></i> Roles y Permisos</div>
+      <div class="card-body small">
+        <dl>
+          <dt>🔑 Admin</dt>
+          <dd>Acceso completo: Dashboard, Negocios (CRUD), editar reglas globales,
+          configurar avisos, ver estado del bridge. No ve contenido de conversaciones
+          por privacidad.</dd>
+          <dt>👤 Cliente (dueño del negocio)</dt>
+          <dd>Acceso solo a su negocio: conversaciones, editar reglas de su bot,
+          gestionar conexiones WhatsApp, encender/apagar el bot.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-gear"></i> Primeros Pasos</div>
+      <div class="card-body small">
+        <ol>
+          <li><strong>Admin</strong> crea el negocio con sus datos y número WhatsApp.</li>
+          <li><strong>Cliente</strong> inicia sesión y va a <em>Conexiones WhatsApp</em>
+          para verificar su número.</li>
+          <li>Si es cuenta personal, escanea el QR en <em>WA Bridge</em>.</li>
+          <li>Ve a <em>Configuración</em> y escribe las instrucciones para tu bot
+          (horarios, productos, precios, etc.) usando Markdown.</li>
+          <li>Activa el bot desde el toggle en Configuración.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  {% if user %}
+  <div class="col-12 mt-3">
+    <h4><i class="bi bi-lock"></i> Configuración Avanzada</h4>
+    <p class="text-muted">Estas secciones requieren haber iniciado sesión.</p>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-robot"></i> Editar Reglas de la IA</div>
+      <div class="card-body small">
+        <p>Las reglas definen cómo responde tu bot. Se escriben en formato Markdown.</p>
+        <ul>
+          <li><strong>Generales</strong>: aplican a todos los negocios (tono, privacidad,
+          escalamiento). Solo las edita el admin.</li>
+          <li><strong>Por negocio</strong>: horarios, productos, precios, promociones.
+          Las edita el cliente desde <em>Configuración</em> o el admin desde
+          <em>Editar negocio</em>.</li>
+        </ul>
+        <p class="mt-2">Tips de Markdown:</p>
+        <ul>
+          <li><code># Título</code> — encabezado</li>
+          <li><code>- item</code> — lista con viñetas</li>
+          <li><code>**negrita**</code> — texto resaltado</li>
+          <li><code>[texto](url)</code> — enlace</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-chat-dots"></i> Solución de Problemas</div>
+      <div class="card-body small">
+        <dl>
+          <dt>❌ El bot no responde</dt>
+          <dd>1. Verifica que el bot esté <strong>activado</strong> en Configuración.<br>
+          2. Revisa el estado del <strong>WA Bridge</strong> (menú WA Bridge).<br>
+          3. Asegúrate de que el QR esté escaneado y la sesión esté <code>connected</code>.<br>
+          4. Confirma que el número está configurado en Conexiones WhatsApp.</dd>
+          <dt>⚠️ Error "Phone Number ID no encontrado"</dt>
+          <dd>Si usas Meta API, verifica el Phone Number ID en Editar negocio.</dd>
+          <dt>👁️ No veo mis conversaciones</dt>
+          <dd>Si eres admin, las conversaciones se muestran sin contenido por privacidad.
+          Si eres cliente, asegúrate de estar viendo tu negocio correcto.</dd>
+          <dt>🔄 El QR no se genera</dt>
+          <dd>Revisa que el WA Bridge esté corriendo. Si el problema persiste,
+          contacta al administrador del sistema.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  {% if is_admin %}
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-shield-lock"></i> Administración</div>
+      <div class="card-body small">
+        <ul>
+          <li><strong>Negocios</strong>: crear, editar y desactivar negocios.
+          Cada negocio puede tener múltiples números WhatsApp.</li>
+          <li><strong>Aviso WhatsApp</strong>: personalizar el mensaje de advertencia
+          que ven los clientes con cuentas personales.</li>
+          <li><strong>Reglas generales</strong>: definir el comportamiento base del bot
+          para todos los negocios.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="col-12 mt-4">
+    <div class="card">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-person-circle fs-1"></i>
+        <h5 class="mt-2">¿Necesitas más ayuda?</h5>
+        <p class="text-muted">Inicia sesión para acceder a guías de configuración
+        avanzada y solución de problemas específicos de tu negocio.</p>
+        <a href="/admin/login" class="btn btn-primary">
+          <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
