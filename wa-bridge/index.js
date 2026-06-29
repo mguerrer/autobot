@@ -18,6 +18,7 @@ const app = express();
 app.use(express.json());
 
 const sessions = new Map();
+const pausedSessions = new Set();
 
 function normalizarNumero(num) {
   return num.replace(/[^0-9]/g, '');
@@ -44,7 +45,7 @@ function syncSessions() {
   const activos = new Set(obtenerNumerosActivos());
 
   for (const num of activos) {
-    if (!sessions.has(num)) {
+    if (!sessions.has(num) && !pausedSessions.has(num)) {
       console.log(`➡️ Iniciando sesión para ${num}`);
       iniciarSesion(num);
     }
@@ -112,7 +113,7 @@ async function iniciarSesion(numero) {
       }
 
       setTimeout(() => {
-        if (!sessions.has(numero)) iniciarSesion(numero);
+        if (!sessions.has(numero) && !pausedSessions.has(numero)) iniciarSesion(numero);
       }, 5000);
     }
   });
@@ -205,6 +206,43 @@ app.post('/send', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+app.post('/session/:numero/start', async (req, res) => {
+  const num = normalizarNumero(req.params.numero);
+  pausedSessions.delete(num);
+  if (sessions.has(num)) {
+    return res.json({ success: true, message: `${num} ya está activo` });
+  }
+  await iniciarSesion(num);
+  res.json({ success: true, message: `Iniciando sesión para ${num}` });
+});
+
+app.post('/session/:numero/stop', (req, res) => {
+  const num = normalizarNumero(req.params.numero);
+  const ses = sessions.get(num);
+  if (ses) {
+    pausedSessions.add(num);
+    ses.sock?.end(new Error('Detenido por admin'));
+    fs.rmSync(path.join(SESSIONS_DIR, num), { recursive: true, force: true });
+    sessions.delete(num);
+    console.log(`⏹️ ${num} detenido por admin`);
+  }
+  res.json({ success: true, message: `${num} detenido` });
+});
+
+app.post('/session/:numero/restart', async (req, res) => {
+  const num = normalizarNumero(req.params.numero);
+  const ses = sessions.get(num);
+  if (ses) {
+    pausedSessions.delete(num);
+    ses.sock?.end(new Error('Reiniciado por admin'));
+    fs.rmSync(path.join(SESSIONS_DIR, num), { recursive: true, force: true });
+    sessions.delete(num);
+  }
+  await iniciarSesion(num);
+  console.log(`🔄 ${num} reiniciado por admin`);
+  res.json({ success: true, message: `Reiniciando ${num}` });
 });
 
 syncSessions();

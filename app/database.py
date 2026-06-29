@@ -22,7 +22,12 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
     from app.auth import seed_default_users
     await seed_default_users()
-    from app.services.rule_engine import migrar_reglas_de_archivos_a_db
+    from app.services.rule_engine import migrar_reglas_de_archivos_a_db, guardar_reglas_generales
     await migrar_reglas_de_archivos_a_db()
     from app.services.rule_engine import migrar_negocios_de_json_a_db
     await migrar_negocios_de_json_a_db()
+    from pathlib import Path
+    ruta = Path(__file__).resolve().parent.parent / "datos" / "reglas_generales.md"
+    if ruta.exists():
+        contenido = ruta.read_text(encoding="utf-8")
+        await guardar_reglas_generales(contenido)

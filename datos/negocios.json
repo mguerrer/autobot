@@ -1,43 +1,102 @@
 [
   {
+    "id": 1,
+    "rut": "10.382.724-8",
+    "nombre": "ActionBot SpA",
+    "rubro_id": 0,
+    "dueno_nombre": "Laura Harfagar",
+    "dueno_telefono": "+56923606916",
+    "activo": true,
+    "numeros": [
+      {
+        "numero": "+56923606916",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": ""
+      }
+    ],
+    "bot_whatsapp": "+56923606916",
+    "phone_number_id": "",
+    "verify_token": ""
+  },
+  {
+    "id": 2,
     "rut": "76.123.456-7",
     "nombre": "Pizzería Napoli",
     "rubro_id": 1,
     "dueno_nombre": "Carlos López",
     "dueno_telefono": "+56911122333",
+    "activo": true,
+    "numeros": [
+      {
+        "numero": "+56998765432",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": "napoli_token_123"
+      }
+    ],
     "bot_whatsapp": "+56998765432",
-    "verify_token": "napoli_token_123",
-    "activo": true
+    "phone_number_id": "",
+    "verify_token": "napoli_token_123"
   },
   {
+    "id": 3,
     "rut": "77.789.012-3",
     "nombre": "TechSupport Ltda.",
     "rubro_id": 7,
     "dueno_nombre": "María Soto",
     "dueno_telefono": "+56922233444",
+    "activo": true,
+    "numeros": [
+      {
+        "numero": "+56987654321",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": "tech_token_456"
+      }
+    ],
     "bot_whatsapp": "+56987654321",
-    "verify_token": "tech_token_456",
-    "activo": true
+    "phone_number_id": "",
+    "verify_token": "tech_token_456"
   },
   {
+    "id": 4,
     "rut": "78.901.234-5",
     "nombre": "Club Inactivo",
     "rubro_id": 3,
     "dueno_nombre": "Pedro Díaz",
     "dueno_telefono": "+56933344555",
+    "activo": false,
+    "numeros": [
+      {
+        "numero": "+56900000000",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": "club_token_789"
+      }
+    ],
     "bot_whatsapp": "+56900000000",
-    "verify_token": "club_token_789",
-    "activo": false
+    "phone_number_id": "",
+    "verify_token": "club_token_789"
   },
   {
+    "id": 5,
     "rut": "7688844-2",
     "nombre": "Panadería El Pulento",
     "rubro_id": 11,
     "dueno_nombre": "Marcos Guerrero",
     "dueno_telefono": "+56993231694",
-    "bot_whatsapp": "+56993231694",
-    "verify_token": "autobot_verify_001",
     "activo": true,
-    "phone_number_id": ""
+    "numeros": [
+      {
+        "numero": "+56993231694",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": "autobot_verify_001"
+      }
+    ],
+    "bot_whatsapp": "+56993231694",
+    "phone_number_id": "",
+    "verify_token": "autobot_verify_001"
   }
 ]

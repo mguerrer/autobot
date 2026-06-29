@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import async_session
-from app.models import Usuario
+from app.models import Usuario, Negocio
 
 SECRET_KEY = settings.secret_key
 COOKIE_NAME = "autobot_session"
@@ -94,8 +94,8 @@ def ensure_authenticated(request: Request):
     return session
 
 
-def has_role(session: dict, role: str) -> bool:
-    return session.get("role") == role
+def has_role(session: dict, *roles: str) -> bool:
+    return session.get("role") in roles
 
 
 async def seed_default_users():
@@ -139,13 +139,52 @@ async def seed_default_users():
             )
             db.add(cliente)
 
+        result = await db.execute(select(Usuario).where(Usuario.username == "laura"))
+        if not result.scalar_one_or_none():
+            from app.models import NumeroWhatsApp
+            laura_negocio = await db.execute(
+                select(Negocio).where(Negocio.rut == "10.382.724-8")
+            )
+            if not laura_negocio.scalar_one_or_none():
+                neg = Negocio(
+                    rut="10.382.724-8",
+                    nombre="ActionBot SpA",
+                    rubro_id=0,
+                    dueno_nombre="Laura Harfagar",
+                    dueno_telefono="+56923606916",
+                    activo=True,
+                )
+                db.add(neg)
+                await db.flush()
+                num_exists = await db.execute(
+                    select(NumeroWhatsApp).where(
+                        NumeroWhatsApp.negocio_rut == "10.382.724-8",
+                        NumeroWhatsApp.numero == "+56923606916",
+                    )
+                )
+                if not num_exists.scalar_one_or_none():
+                    db.add(NumeroWhatsApp(
+                        negocio_rut="10.382.724-8",
+                        numero="+56923606916",
+                        tipo_cuenta="personal",
+                    ))
+            laura = Usuario(
+                username="laura",
+                password_hash=hash_password("bubucella"),
+                role="ventas",
+                negocio_rut="10.382.724-8",
+                telefono="+56923606916",
+            )
+            db.add(laura)
+
         await db.commit()
 
 
 def user_context(request: Request) -> dict:
     from app.auth import get_session
     session = get_session(request)
-    return {"user": session, "is_admin": session and session.get("role") == "admin"}
+    role = session.get("role") if session else ""
+    return {"user": session, "is_admin": role in ("admin", "ventas")}
 
 
 def hash_password(password: str) -> str:

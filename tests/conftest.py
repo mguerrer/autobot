@@ -160,9 +160,11 @@ async def setup_test_env(monkeypatch, datos_dir, session_factory):
         if f.is_file() and f.suffix in TEXT_EXTENSIONS:
             content = f.read_text(encoding="utf-8")
             (datos_dir / f.name).write_text(content, encoding="utf-8")
-    from app.services import rule_engine
+    from app import database as app_db
+    from app.services import rule_engine, whatsapp_service
     monkeypatch.setattr(rule_engine, "DATOS_DIR", datos_dir)
     monkeypatch.setattr(rule_engine, "async_session", session_factory)
+    monkeypatch.setattr(whatsapp_service, "async_session", session_factory)
 
     await _seed_db(session_factory, datos_dir)
     return datos_dir

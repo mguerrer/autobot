@@ -51,12 +51,26 @@
             <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
             <p class="mt-2 text-muted">Iniciando sesión...</p>
           </div>
-        {% else %}
+        {% elif s.state == "disconnected" %}
           <div class="py-3">
             <i class="bi bi-clock-history" style="font-size: 3rem;"></i>
-            <p class="mt-2 text-muted">Desconectado. Reintentando...</p>
+            <p class="mt-2 text-muted">Desconectado</p>
           </div>
         {% endif %}
+      </div>
+      <div class="card-footer d-flex gap-2 justify-content-center">
+        <button class="btn btn-sm btn-success" onclick="accionBridge('start','{{ s.numero }}')"
+          {% if s.state == "connected" or s.state == "awaiting_qr" or s.state == "connecting" %}disabled{% endif %}>
+          <i class="bi bi-play-fill"></i> Iniciar
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="accionBridge('stop','{{ s.numero }}')"
+          {% if s.state != "connected" and s.state != "awaiting_qr" %}disabled{% endif %}>
+          <i class="bi bi-stop-fill"></i> Detener
+        </button>
+        <button class="btn btn-sm btn-warning" onclick="accionBridge('restart','{{ s.numero }}')"
+          {% if s.state != "connected" %}disabled{% endif %}>
+          <i class="bi bi-arrow-repeat"></i> Reiniciar
+        </button>
       </div>
     </div>
   </div>
@@ -89,4 +103,28 @@
     </ol>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function accionBridge(accion, numero) {
+  const btn = event.target.closest('button');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>...';
+
+  fetch(`/admin/wa-bridge/${encodeURIComponent(numero)}/${accion}`, {
+    method: 'POST',
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log(accion, numero, data);
+    setTimeout(() => location.reload(), 1500);
+  })
+  .catch(err => {
+    console.error(err);
+    btn.disabled = false;
+    btn.innerHTML = 'Error';
+  });
+}
+</script>
 {% endblock %}

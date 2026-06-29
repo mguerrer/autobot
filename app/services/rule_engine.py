@@ -138,6 +138,7 @@ async def guardar_negocios_db(negocios: list[dict]) -> None:
                         verify_token=nd.get("verify_token", ""),
                     ))
         await db.commit()
+    await exportar_negocios_json()
 
 
 async def cargar_numeros_whatsapp(rut: str) -> list[dict]:
@@ -181,6 +182,7 @@ async def guardar_numero_whatsapp(rut: str, numero: str, tipo_cuenta: str = "per
                 verify_token=verify_token,
             ))
         await db.commit()
+    await exportar_negocios_json()
 
 
 async def eliminar_numero_whatsapp(rut: str, numero: str) -> None:
@@ -195,6 +197,7 @@ async def eliminar_numero_whatsapp(rut: str, numero: str) -> None:
         if w:
             await db.delete(w)
             await db.commit()
+    await exportar_negocios_json()
 
 
 async def buscar_negocio_por_whatsapp_db(bot_whatsapp: str) -> dict | None:
@@ -316,6 +319,12 @@ async def construir_prompt_sistema(rut: str) -> str:
     ])
 
     return "\n".join(partes)
+
+
+async def exportar_negocios_json() -> None:
+    ruta = DATOS_DIR / "negocios.json"
+    negocios = await cargar_negocios_db()
+    ruta.write_text(json.dumps(negocios, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 async def migrar_negocios_de_json_a_db() -> None:

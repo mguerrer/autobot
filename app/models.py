@@ -13,6 +13,7 @@ class Usuario(Base):
     password_hash = Column(String(128), nullable=False)
     role = Column(String(20), nullable=False, default="cliente")
     negocio_rut = Column(String(20), nullable=True)
+    telefono = Column(String(20), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

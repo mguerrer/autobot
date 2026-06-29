@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 def _check_cliente(session: dict, rut: str):
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return False
     return session.get("negocio_rut") == rut
 
@@ -29,7 +29,7 @@ def _check_cliente(session: dict, rut: str):
 @router.get("/", response_class=HTMLResponse)
 async def cliente_index(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     negocios = await cargar_negocios_db()
@@ -52,7 +52,7 @@ async def cliente_index(request: Request):
 @router.get("/conversaciones", response_class=HTMLResponse)
 async def cliente_conversaciones(request: Request, db: AsyncSession = Depends(get_db)):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     negocios_list = await cargar_negocios_db()
@@ -90,7 +90,7 @@ async def cliente_conversaciones(request: Request, db: AsyncSession = Depends(ge
 @router.get("/conversaciones/{conv_id}", response_class=HTMLResponse)
 async def cliente_chat_detail(request: Request, conv_id: int, db: AsyncSession = Depends(get_db)):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     negocios_list = await cargar_negocios_db()
@@ -128,7 +128,7 @@ async def cliente_chat_detail(request: Request, conv_id: int, db: AsyncSession =
 @router.get("/configuracion", response_class=HTMLResponse)
 async def cliente_config(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     negocios = await cargar_negocios_db()
@@ -153,7 +153,7 @@ async def cliente_config(request: Request):
 @router.post("/configuracion/reglas")
 async def cliente_guardar_reglas(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
 
@@ -167,7 +167,7 @@ async def cliente_guardar_reglas(request: Request):
 @router.post("/configuracion/toggle")
 async def cliente_toggle_bot(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
 
@@ -184,7 +184,7 @@ async def cliente_toggle_bot(request: Request):
 @router.get("/conexiones", response_class=HTMLResponse)
 async def cliente_conexiones(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     negocios = await cargar_negocios_db()
@@ -211,7 +211,7 @@ async def cliente_conexiones(request: Request):
 @router.post("/conexiones/eliminar")
 async def cliente_eliminar_numero(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
 
@@ -231,7 +231,7 @@ async def cliente_eliminar_numero(request: Request):
 @router.post("/conexiones/ignorar-aviso")
 async def cliente_ignorar_aviso(request: Request):
     session = ensure_authenticated(request)
-    if not has_role(session, "cliente"):
+    if not has_role(session, "cliente", "ventas"):
         return HTMLResponse("Acceso denegado", status_code=403)
     rut = session.get("negocio_rut", "")
     await marcar_aviso_personal_visto(rut)
