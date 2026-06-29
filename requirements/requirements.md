@@ -27,6 +27,7 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 ### 1.3 Panel Admin (`/admin/`)
 - Dashboard con cards de negocio y últimas conversaciones
 - CRUD de negocios (listar, detalle, editar, toggle activo)
+- **Editar reglas del bot por negocio** (editor Markdown con EasyMDE en página de editar negocio)
 - Lista de chats (sin contenido para admin)
 - Gestión de WA Bridge (solo clientes)
 - Breadcrumbs de navegación
@@ -47,14 +48,24 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 ### 1.6 IA con Ollama
 - Modelo configurable: `gemma3:1b`, `qwen2.5-coder:3b`, etc.
 - Prompt system construido con reglas generales + reglas por negocio + rubro
-- Contexto de negocio editable desde panel cliente
+- Contexto de negocio editable desde panel cliente y desde panel admin (editar negocio)
+- Reglas persistentes en base de datos (tablas `ReglaGeneral` y `ReglaNegocio`)
 
 ### 1.7 Base de Datos
 - SQLite vía SQLAlchemy async + aiosqlite
-- Modelos: `Usuario`, `Contacto`, `Conversacion`, `Mensaje`
+- Modelos: `Usuario`, `Contacto`, `Conversacion`, `Mensaje`, `ReglaGeneral`, `ReglaNegocio`
+- Reglas de negocio persistentes en DB (no en archivos planos), compartidas entre réplicas K8s
+- Migración automática de reglas desde archivos a DB al iniciar (solo si tabla vacía)
 - Seed automático de usuarios por defecto
 
-### 1.8 Despliegue Local (K8s)
+### 1.8 Pruebas Automatizadas
+- Framework: pytest + pytest-asyncio
+- 43 tests: rule engine (18), API endpoints (18), modelos (6), webhook (9)
+- Fixtures: engine in-memory SQLite, session factory, datos dir con monkeypatch
+- Clientes autenticados: `admin_client`, `cliente_client` (cookie de sesión HMAC)
+- Tests de reglas de negocio: carga desde DB, guardado, edición desde admin y cliente
+
+### 1.9 Despliegue Local (K8s)
 - Dockerfiles para API (Python) y WA Bridge (Node.js)
 - Helm chart con deployments, services, ingress
 - 2 réplicas por servicio con balanceo round-robin
@@ -102,7 +113,7 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 | `/admin/`                   | GET    | sí       | Dashboard                          |
 | `/admin/negocios`           | GET    | sí       | Lista de negocios                  |
 | `/admin/negocios/{rut}`     | GET    | sí       | Detalle de negocio                 |
-| `/admin/negocios/{rut}/editar` | GET/POST | sí | Editar negocio                   |
+| `/admin/negocios/{rut}/editar` | GET/POST | sí | Editar negocio (incluye reglas del bot con EasyMDE) |
 | `/admin/negocios/{rut}/toggle` | POST | sí     | Activar/desactivar                 |
 | `/admin/chats`              | GET    | sí       | Lista de conversaciones            |
 | `/admin/chats/{id}`         | GET    | sí       | Detalle conversación (oculto admin)|
@@ -135,7 +146,6 @@ Plataforma multi-tenant para bots de WhatsApp con IA vía Ollama. Hecha con Pyth
 - Rate limiting por IP/usuario
 - JWT con refresh tokens
 - Audit log de acciones administrativas
-- Pruebas automatizadas (pytest + pytest-asyncio)
 - CI/CD pipeline
 - Multi-stage Docker builds optimizados
 - Endpoint `/health` con chequeo de dependencias

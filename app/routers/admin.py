@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje, Usuario
-from app.services.rule_engine import cargar_negocios, cargar_rubros, guardar_negocios
+from app.services.rule_engine import (
+    cargar_negocios, cargar_rubros, guardar_negocios,
+    cargar_reglas_negocio, guardar_reglas_negocio,
+)
 from app.auth import (
     get_session, create_session, hash_password, verify_password,
     ensure_authenticated, has_role, user_context,
@@ -144,9 +147,11 @@ async def admin_negocio_editar(request: Request, rut: str):
     negocio = next((n for n in negocios if n["rut"] == rut), None)
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
+    reglas_bot = await cargar_reglas_negocio(rut)
     return templates.TemplateResponse(request, "negocio_edit.html", {
         "negocio": negocio,
         "rubros": rubros,
+        "reglas_bot": reglas_bot,
         **user_context(request),
     })
 
@@ -176,6 +181,10 @@ async def admin_negocio_guardar(request: Request, rut: str):
     negocio["activo"] = form.get("activo") == "on"
 
     guardar_negocios(negocios)
+
+    reglas_texto = form.get("reglas_bot", "").strip()
+    await guardar_reglas_negocio(rut, reglas_texto)
+
     return RedirectResponse(url=f"/admin/negocios/{rut}", status_code=303)
 
 

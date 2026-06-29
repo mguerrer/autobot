@@ -16,6 +16,23 @@ class Usuario(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class ReglaGeneral(Base):
+    __tablename__ = "reglas_generales"
+
+    id = Column(Integer, primary_key=True)
+    contenido = Column(Text, nullable=False, default="")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class ReglaNegocio(Base):
+    __tablename__ = "reglas_negocio"
+
+    id = Column(Integer, primary_key=True)
+    negocio_rut = Column(String(20), unique=True, nullable=False, index=True)
+    contenido = Column(Text, nullable=False, default="")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
 class Contacto(Base):
     __tablename__ = "contactos"
 

@@ -9,36 +9,39 @@ from app.services.rule_engine import (
 )
 
 
+pytestmark = pytest.mark.asyncio
+
+
 class TestReglasGenerales:
-    def test_cargar_reglas_generales_no_vacio(self):
-        contenido = cargar_reglas_generales()
+    async def test_cargar_reglas_generales_no_vacio(self):
+        contenido = await cargar_reglas_generales()
         assert contenido
         assert "Sé siempre amable" in contenido
         assert "Reglas Generales del Bot" in contenido
 
-    def test_reglas_incluyen_comportamiento_esperado(self):
-        contenido = cargar_reglas_generales()
+    async def test_reglas_incluyen_comportamiento_esperado(self):
+        contenido = await cargar_reglas_generales()
         assert "Si no sabes la respuesta" in contenido
         assert "Mantén las respuestas concisas" in contenido
 
 
 class TestReglasNegocio:
-    def test_cargar_reglas_pizzeria(self):
-        reglas = cargar_reglas_negocio("76.123.456-7")
+    async def test_cargar_reglas_pizzeria(self):
+        reglas = await cargar_reglas_negocio("76.123.456-7")
         assert reglas
         assert "Pizzería Napoli" in reglas
         assert "$7.990" in reglas
         assert "Delivery gratis sobre $15.000" in reglas
 
-    def test_cargar_reglas_techsupport(self):
-        reglas = cargar_reglas_negocio("77.789.012-3")
+    async def test_cargar_reglas_techsupport(self):
+        reglas = await cargar_reglas_negocio("77.789.012-3")
         assert reglas
         assert "TechSupport Ltda." in reglas
         assert "Diagnóstico técnico" in reglas
         assert "Garantía de 3 meses" in reglas
 
-    def test_rut_inexistente_retorna_vacio(self):
-        reglas = cargar_reglas_negocio("00.000.000-0")
+    async def test_rut_inexistente_retorna_vacio(self):
+        reglas = await cargar_reglas_negocio("00.000.000-0")
         assert reglas == ""
 
 
@@ -98,21 +101,21 @@ class TestBuscarNegocio:
 
 
 class TestPromptSistema:
-    def test_prompt_incluye_datos_negocio(self):
-        prompt = construir_prompt_sistema("76.123.456-7")
+    async def test_prompt_incluye_datos_negocio(self):
+        prompt = await construir_prompt_sistema("76.123.456-7")
         assert "Pizzería Napoli" in prompt
         assert "Restaurante" in prompt
 
-    def test_prompt_incluye_reglas_generales(self):
-        prompt = construir_prompt_sistema("76.123.456-7")
+    async def test_prompt_incluye_reglas_generales(self):
+        prompt = await construir_prompt_sistema("76.123.456-7")
         assert "Sé siempre amable" in prompt
 
-    def test_prompt_incluye_reglas_especificas(self):
-        prompt = construir_prompt_sistema("77.789.012-3")
+    async def test_prompt_incluye_reglas_especificas(self):
+        prompt = await construir_prompt_sistema("77.789.012-3")
         assert "TechSupport Ltda." in prompt
         assert "Diagnóstico técnico" in prompt
 
-    def test_prompt_incluye_instrucciones(self):
-        prompt = construir_prompt_sistema("76.123.456-7")
+    async def test_prompt_incluye_instrucciones(self):
+        prompt = await construir_prompt_sistema("76.123.456-7")
         assert "Eres un bot de atención al cliente" in prompt
         assert "No menciones que eres una IA" in prompt

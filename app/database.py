@@ -22,3 +22,5 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
     from app.auth import seed_default_users
     await seed_default_users()
+    from app.services.rule_engine import migrar_reglas_de_archivos_a_db
+    await migrar_reglas_de_archivos_a_db()

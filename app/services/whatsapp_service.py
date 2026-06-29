@@ -115,7 +115,7 @@ async def procesar_mensaje_entrante(bot_whatsapp: str, from_number: str, texto: 
         await _guardar_mensaje(db, conversacion.id, "user", texto)
         messages = await _obtener_historial(db, conversacion.id)
 
-    system_prompt = construir_prompt_sistema(rut)
+    system_prompt = await construir_prompt_sistema(rut)
     respuesta = await generar_respuesta(system_prompt, messages)
 
     async with async_session() as db:

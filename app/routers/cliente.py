@@ -1,4 +1,3 @@
-import re
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -8,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Conversacion, Contacto, Mensaje
 from app.services.rule_engine import (
-    cargar_negocios, cargar_rubros, guardar_negocios,
-    cargar_reglas_generales, cargar_reglas_negocio, DATOS_DIR,
+    cargar_negocios, guardar_negocios,
+    cargar_reglas_generales, cargar_reglas_negocio, guardar_reglas_negocio,
 )
 from app.auth import (
     get_session, ensure_authenticated, has_role, user_context,
@@ -36,7 +35,7 @@ async def cliente_index(request: Request):
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
-    reglas = cargar_reglas_negocio(rut)
+    reglas = await cargar_reglas_negocio(rut)
 
     return templates.TemplateResponse(request, "cliente/index.html", {
         "negocio": negocio,
@@ -131,8 +130,8 @@ async def cliente_config(request: Request):
     if not negocio:
         return HTMLResponse("Negocio no encontrado", status_code=404)
 
-    reglas = cargar_reglas_negocio(rut)
-    reglas_generales = cargar_reglas_generales()
+    reglas = await cargar_reglas_negocio(rut)
+    reglas_generales = await cargar_reglas_generales()
 
     return templates.TemplateResponse(request, "cliente/configuracion.html", {
         "negocio": negocio,
@@ -153,18 +152,7 @@ async def cliente_guardar_reglas(request: Request):
     form = await request.form()
     nuevo_texto = form.get("reglas", "").strip()
 
-    reglas_path = DATOS_DIR / "reglas_negocio.md"
-    contenido = reglas_path.read_text(encoding="utf-8") if reglas_path.exists() else ""
-
-    patron = rf"## negocio:\s*{re.escape(rut)}\s*\n.*?(?=\n## negocio:|\Z)"
-    nueva_seccion = f"## negocio: {rut}\n{nuevo_texto}\n"
-
-    if re.search(patron, contenido, re.DOTALL):
-        contenido = re.sub(patron, nueva_seccion, contenido, flags=re.DOTALL)
-    else:
-        contenido = contenido.rstrip() + "\n\n" + nueva_seccion if contenido else nueva_seccion
-
-    reglas_path.write_text(contenido, encoding="utf-8")
+    await guardar_reglas_negocio(rut, nuevo_texto)
     return RedirectResponse(url="/cliente/configuracion", status_code=303)
 
 

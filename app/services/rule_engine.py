@@ -1,31 +1,58 @@
+import json
 import re
 from pathlib import Path
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import async_session
+from app.models import ReglaGeneral, ReglaNegocio
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATOS_DIR = BASE_DIR / "datos"
 
 
-def cargar_reglas_generales() -> str:
-    ruta = DATOS_DIR / "reglas_generales.md"
-    if not ruta.exists():
-        return ""
-    return ruta.read_text(encoding="utf-8")
+async def cargar_reglas_generales() -> str:
+    async with async_session() as db:
+        result = await db.execute(select(ReglaGeneral).limit(1))
+        row = result.scalar_one_or_none()
+        return row.contenido if row else ""
 
 
-def cargar_reglas_negocio(rut: str) -> str:
-    ruta = DATOS_DIR / "reglas_negocio.md"
-    if not ruta.exists():
-        return ""
-    contenido = ruta.read_text(encoding="utf-8")
-    patron = rf"## negocio:\s*{re.escape(rut)}\s*\n(.*?)(?=\n## negocio:|\Z)"
-    match = re.search(patron, contenido, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return ""
+async def guardar_reglas_generales(contenido: str) -> None:
+    async with async_session() as db:
+        result = await db.execute(select(ReglaGeneral).limit(1))
+        row = result.scalar_one_or_none()
+        if row:
+            row.contenido = contenido
+        else:
+            db.add(ReglaGeneral(contenido=contenido))
+        await db.commit()
+
+
+async def cargar_reglas_negocio(rut: str) -> str:
+    async with async_session() as db:
+        result = await db.execute(
+            select(ReglaNegocio).where(ReglaNegocio.negocio_rut == rut)
+        )
+        row = result.scalar_one_or_none()
+        return row.contenido if row else ""
+
+
+async def guardar_reglas_negocio(rut: str, contenido: str) -> None:
+    async with async_session() as db:
+        result = await db.execute(
+            select(ReglaNegocio).where(ReglaNegocio.negocio_rut == rut)
+        )
+        row = result.scalar_one_or_none()
+        if row:
+            row.contenido = contenido
+        else:
+            db.add(ReglaNegocio(negocio_rut=rut, contenido=contenido))
+        await db.commit()
 
 
 def cargar_negocios() -> list[dict]:
-    import json
+    from app.services.rule_engine import DATOS_DIR
     ruta = DATOS_DIR / "negocios.json"
     if not ruta.exists():
         return []
@@ -33,7 +60,6 @@ def cargar_negocios() -> list[dict]:
 
 
 def cargar_rubros() -> list[dict]:
-    import json
     ruta = DATOS_DIR / "rubros.json"
     if not ruta.exists():
         return []
@@ -41,7 +67,6 @@ def cargar_rubros() -> list[dict]:
 
 
 def guardar_negocios(negocios: list[dict]) -> None:
-    import json
     ruta = DATOS_DIR / "negocios.json"
     ruta.write_text(
         json.dumps(negocios, indent=2, ensure_ascii=False) + "\n",
@@ -57,9 +82,9 @@ def buscar_negocio_por_whatsapp(bot_whatsapp: str) -> dict | None:
     return None
 
 
-def construir_prompt_sistema(rut: str) -> str:
-    generales = cargar_reglas_generales()
-    especificas = cargar_reglas_negocio(rut)
+async def construir_prompt_sistema(rut: str) -> str:
+    generales = await cargar_reglas_generales()
+    especificas = await cargar_reglas_negocio(rut)
     negocio = None
     for n in cargar_negocios():
         if n.get("rut") == rut:
@@ -94,3 +119,29 @@ def construir_prompt_sistema(rut: str) -> str:
     ])
 
     return "\n".join(partes)
+
+
+async def migrar_reglas_de_archivos_a_db() -> None:
+    reglas_gral_path = DATOS_DIR / "reglas_generales.md"
+    reglas_neg_path = DATOS_DIR / "reglas_negocio.md"
+
+    async with async_session() as db:
+        count = await db.execute(select(ReglaGeneral))
+        if not count.scalar_one_or_none():
+            if reglas_gral_path.exists():
+                contenido = reglas_gral_path.read_text(encoding="utf-8")
+                db.add(ReglaGeneral(contenido=contenido))
+                await db.commit()
+
+        if reglas_neg_path.exists():
+            contenido = reglas_neg_path.read_text(encoding="utf-8")
+            patron = r"## negocio:\s*([^\n]+)\s*\n(.*?)(?=\n## negocio:|\Z)"
+            for match in re.finditer(patron, contenido, re.DOTALL):
+                rut = match.group(1).strip()
+                texto = match.group(2).strip()
+                existing = await db.execute(
+                    select(ReglaNegocio).where(ReglaNegocio.negocio_rut == rut)
+                )
+                if not existing.scalar_one_or_none():
+                    db.add(ReglaNegocio(negocio_rut=rut, contenido=texto))
+            await db.commit()
