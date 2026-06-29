@@ -32,7 +32,6 @@ app.include_router(admin.router)
 app.include_router(cliente.router)
 app.include_router(webhook.router)
 app.include_router(api.router)
-    return HTMLResponse("<html><body><p>QR no disponible</p></body></html>")
 
 
 @app.get("/ayuda", response_class=HTMLResponse)
