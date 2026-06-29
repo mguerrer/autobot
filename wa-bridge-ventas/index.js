@@ -106,9 +106,7 @@ async function iniciarSesion(numero) {
         fs.rmSync(sessionDir, { recursive: true, force: true });
         console.log(`Auth eliminada para ${numero}`);
       }
-      if (!pausedSessions.has(numero)) {
-        setTimeout(() => iniciarSesion(numero), 3000);
-      }
+      // No auto-reconnect — usuario debe presionar Iniciar
     }
   });
   sock.ev.on('creds.update', saveCreds);

@@ -112,11 +112,7 @@ async function iniciarSesion(numero) {
         fs.rmSync(sessionDir, { recursive: true, force: true });
       }
 
-      if (!pausedSessions.has(numero)) {
-        setTimeout(() => iniciarSesion(numero), 3000);
-      } else {
-        console.log(`⏸️ ${numero} en pausa, no se reconecta`);
-      }
+      // No auto-reconnect — usuario debe presionar Iniciar
     }
   });
 

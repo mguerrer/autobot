@@ -112,6 +112,9 @@
 
 {% block scripts %}
 <script>
+// Auto-refresh cada 15s para mantener QR fresco
+setTimeout(() => location.reload(), 15000);
+
 function accionBridge(accion, numero) {
   const btn = event.target.closest('button');
   btn.disabled = true;
