@@ -32,25 +32,6 @@ app.include_router(admin.router)
 app.include_router(cliente.router)
 app.include_router(webhook.router)
 app.include_router(api.router)
-
-
-@app.get("/qr-laura")
-async def qr_laura():
-    import base64
-    from fastapi.responses import HTMLResponse
-    png = Path("/tmp/qr_laura.png")
-    html = Path("/tmp/qr_laura.html")
-    if html.exists():
-        content = html.read_text()
-        return HTMLResponse(content)
-    try:
-        import urllib.request, json
-        data = urllib.request.urlopen("http://localhost:9091/qr").read()
-        d = json.loads(data)
-        if d.get("qr"):
-            return HTMLResponse(f'''<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#111"><img src="{d['qr']}" style="max-width:300px"></body></html>''')
-    except:
-        pass
     return HTMLResponse("<html><body><p>QR no disponible</p></body></html>")
 
 
