@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "rut": "10.382.724-8",
+    "nombre": "ActionBot SpA",
+    "rubro_id": 0,
+    "dueno_nombre": "Laura Harfagar",
+    "dueno_telefono": "+56923606916",
+    "activo": true,
+    "numeros": [
+      {
+        "numero": "+56923606916",
+        "tipo_cuenta": "personal",
+        "phone_number_id": "",
+        "verify_token": ""
+      }
+    ],
+    "bot_whatsapp": "+56923606916",
+    "phone_number_id": "",
+    "verify_token": ""
+  }
+]

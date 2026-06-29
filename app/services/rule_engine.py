@@ -324,7 +324,15 @@ async def construir_prompt_sistema(rut: str) -> str:
 async def exportar_negocios_json() -> None:
     ruta = DATOS_DIR / "negocios.json"
     negocios = await cargar_negocios_db()
-    ruta.write_text(json.dumps(negocios, ensure_ascii=False, indent=2), encoding="utf-8")
+    clientes = [n for n in negocios if n["rut"] != "10.382.724-8"]
+    ruta.write_text(json.dumps(clientes, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+async def exportar_negocios_ventas_json() -> None:
+    ruta = DATOS_DIR / "negocios_ventas.json"
+    negocios = await cargar_negocios_db()
+    ventas = [n for n in negocios if n["rut"] == "10.382.724-8"]
+    ruta.write_text(json.dumps(ventas, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 async def migrar_negocios_de_json_a_db() -> None:

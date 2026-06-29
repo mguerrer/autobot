@@ -13,7 +13,7 @@ from app.services.rule_engine import (
     cargar_reglas_negocio, guardar_reglas_negocio,
     cargar_numeros_whatsapp, guardar_numero_whatsapp, eliminar_numero_whatsapp,
     obtener_aviso_cuenta_personal, guardar_aviso_cuenta_personal,
-    exportar_negocios_json,
+    exportar_negocios_json, exportar_negocios_ventas_json,
 )
 from app.auth import (
     get_session, create_session, hash_password, verify_password,
@@ -305,8 +305,11 @@ async def admin_chat_responder(request: Request, conv_id: int, db: AsyncSession 
     db.add(msg)
     await db.commit()
 
-    provider = get_provider()
-    await provider.send_message(contacto.telefono, texto, "")
+    negocios_lista = await cargar_negocios_db()
+    negocio_actual = next((n for n in negocios_lista if n["rut"] == conv.negocio_rut), None)
+    bot_w = (negocio_actual.get("numeros") or [{}])[0].get("numero", "") if negocio_actual else ""
+    provider = await get_provider(bot_w)
+    await provider.send_message(contacto.telefono, texto, bot_w)
 
     return RedirectResponse(url=f"/admin/chats/{conv_id}", status_code=303)
 
@@ -335,37 +338,59 @@ async def _numeros_del_cliente(rut: str) -> set[str]:
     return {n["numero"] for n in nums}
 
 
+def _bridge_url_para_rol(session: dict) -> str:
+    if has_role(session, "ventas"):
+        return settings.wa_bridge_ventas_url or settings.wa_bridge_url
+    return settings.wa_bridge_url
+
+
+def _bridge_headers() -> dict:
+    headers = {}
+    if settings.wa_bridge_api_key:
+        headers["X-API-Key"] = settings.wa_bridge_api_key
+    return headers
+
+
+async def _fetch_bridge_sessions(bridge_url: str) -> tuple[list, str | None]:
+    sessions_data, error = [], None
+    if not bridge_url:
+        return [], "WA_BRIDGE_URL no configurado"
+    headers = _bridge_headers()
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(f"{bridge_url}/status", headers=headers)
+            data = resp.json()
+            sessions_data = data.get("sessions", [])
+    except httpx.RequestError as e:
+        error = str(e)
+    for s in sessions_data:
+        if s.get("state") == "awaiting_qr" and s.get("hasQR"):
+            try:
+                async with httpx.AsyncClient(timeout=5) as client:
+                    qr_resp = await client.get(f"{bridge_url}/qr/{s['numero']}", headers=headers)
+                    s["qr_data"] = qr_resp.json().get("qr")
+            except httpx.RequestError:
+                s["qr_data"] = None
+    return sessions_data, error
+
+
 @router.get("/wa-bridge", response_class=HTMLResponse)
 async def admin_wa_bridge(request: Request):
     session = ensure_authenticated(request)
     es_admin = has_role(session, "admin", "ventas")
     if not es_admin and not has_role(session, "cliente"):
         return HTMLResponse("Acceso denegado", status_code=403)
-    bridge_url = settings.wa_bridge_url
-    sessions_data = []
-    error = None
 
-    if bridge_url:
-        try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                resp = await client.get(f"{bridge_url}/status")
-                data = resp.json()
-                sessions_data = data.get("sessions", [])
-        except httpx.RequestError as e:
-            error = str(e)
+    bridge_url = _bridge_url_para_rol(session)
+    await exportar_negocios_json()
+    if has_role(session, "ventas"):
+        await exportar_negocios_ventas_json()
 
-        if not es_admin:
-            numeros_cliente = await _numeros_del_cliente(session.get("negocio_rut", ""))
-            sessions_data = [s for s in sessions_data if s.get("numero") in numeros_cliente]
+    sessions_data, error = await _fetch_bridge_sessions(bridge_url)
 
-        for s in sessions_data:
-            if s.get("state") == "awaiting_qr" and s.get("hasQR"):
-                try:
-                    async with httpx.AsyncClient(timeout=5) as client:
-                        qr_resp = await client.get(f"{bridge_url}/qr/{s['numero']}")
-                        s["qr_data"] = qr_resp.json().get("qr")
-                except httpx.RequestError:
-                    s["qr_data"] = None
+    if not es_admin:
+        numeros_cliente = await _numeros_del_cliente(session.get("negocio_rut", ""))
+        sessions_data = [s for s in sessions_data if s.get("numero") in numeros_cliente]
 
     return templates.TemplateResponse(request, "wa_bridge.html", {
         "sessions": sessions_data,
@@ -387,45 +412,33 @@ async def _verificar_numero_permiso(session: dict, numero: str) -> str | None:
     return "Acceso denegado"
 
 
-@router.post("/wa-bridge/{numero}/start")
-async def admin_wa_bridge_start(request: Request, numero: str):
-    session = ensure_authenticated(request)
+async def _accion_bridge(session: dict, numero: str, accion: str) -> JSONResponse:
     err = await _verificar_numero_permiso(session, numero)
     if err:
         return JSONResponse({"error": err}, status_code=403)
-    await exportar_negocios_json()
-    bridge_url = settings.wa_bridge_url
+    bridge_url = _bridge_url_para_rol(session)
     if not bridge_url:
         return JSONResponse({"error": "WA_BRIDGE_URL no configurado"}, status_code=400)
+    if accion in ("start", "restart"):
+        await exportar_negocios_json()
+        if has_role(session, "ventas"):
+            await exportar_negocios_ventas_json()
+    headers = _bridge_headers()
     async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(f"{bridge_url}/session/{numero}/start")
+        resp = await client.post(f"{bridge_url}/session/{numero}/{accion}", headers=headers)
     return JSONResponse(resp.json(), status_code=resp.status_code)
+
+
+@router.post("/wa-bridge/{numero}/start")
+async def admin_wa_bridge_start(request: Request, numero: str):
+    return await _accion_bridge(ensure_authenticated(request), numero, "start")
 
 
 @router.post("/wa-bridge/{numero}/stop")
 async def admin_wa_bridge_stop(request: Request, numero: str):
-    session = ensure_authenticated(request)
-    err = await _verificar_numero_permiso(session, numero)
-    if err:
-        return JSONResponse({"error": err}, status_code=403)
-    bridge_url = settings.wa_bridge_url
-    if not bridge_url:
-        return JSONResponse({"error": "WA_BRIDGE_URL no configurado"}, status_code=400)
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(f"{bridge_url}/session/{numero}/stop")
-    return JSONResponse(resp.json(), status_code=resp.status_code)
+    return await _accion_bridge(ensure_authenticated(request), numero, "stop")
 
 
 @router.post("/wa-bridge/{numero}/restart")
 async def admin_wa_bridge_restart(request: Request, numero: str):
-    session = ensure_authenticated(request)
-    err = await _verificar_numero_permiso(session, numero)
-    if err:
-        return JSONResponse({"error": err}, status_code=403)
-    await exportar_negocios_json()
-    bridge_url = settings.wa_bridge_url
-    if not bridge_url:
-        return JSONResponse({"error": "WA_BRIDGE_URL no configurado"}, status_code=400)
-    async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.post(f"{bridge_url}/session/{numero}/restart")
-    return JSONResponse(resp.json(), status_code=resp.status_code)
+    return await _accion_bridge(ensure_authenticated(request), numero, "restart")

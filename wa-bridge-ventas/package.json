@@ -1,7 +1,7 @@
 {
-  "name": "autobot-wa-bridge",
-  "version": "3.0.0",
-  "description": "Multi-session WhatsApp bridge for Autobot using Baileys",
+  "name": "autobot-wa-bridge-ventas",
+  "version": "1.0.0",
+  "description": "WA Bridge exclusivo para ventas (Laura/ActionBot)",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,7 +10,6 @@
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "express": "^4.21.0",
     "pino": "^9.0.0",
-    "pino-pretty": "^11.0.0",
     "qrcode": "^1.5.4"
   }
 }

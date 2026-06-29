@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     whatsapp_api_token: str = ""
     whatsapp_api_version: str = "v22.0"
     wa_bridge_url: str = ""
+    wa_bridge_ventas_url: str = ""
+    wa_bridge_api_key: str = ""
     wa_bot_whatsapp: str = ""
 
 

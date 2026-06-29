@@ -74,8 +74,11 @@ def _buscar_phone_number_id(bot_whatsapp: str) -> str | None:
 
 
 class BaileysWhatsAppProvider(WhatsAppProvider):
+    def __init__(self, bridge_url: str = ""):
+        self._bridge_url = bridge_url or settings.wa_bridge_url
+
     async def send_message(self, to: str, message: str, bot_whatsapp: str):
-        bridge_url = settings.wa_bridge_url
+        bridge_url = self._bridge_url
         if not bridge_url:
             logger.error("WA_BRIDGE_URL no configurado")
             return
@@ -92,12 +95,26 @@ class BaileysWhatsAppProvider(WhatsAppProvider):
             logger.error(f"Error conectando al bridge: {e}")
 
 
-def get_provider() -> WhatsAppProvider:
-    if settings.wa_bridge_url:
-        return BaileysWhatsAppProvider()
+async def get_provider(bot_whatsapp: str = "") -> WhatsAppProvider:
+    bridge_url = await _bridge_para_numero(bot_whatsapp)
+    if bridge_url:
+        return BaileysWhatsAppProvider(bridge_url)
     if settings.whatsapp_api_token:
         return MetaWhatsAppProvider()
     return MockWhatsAppProvider()
+
+
+async def _bridge_para_numero(bot_whatsapp: str) -> str:
+    if not bot_whatsapp:
+        return settings.wa_bridge_url
+    from app.services.rule_engine import cargar_negocios_db
+    negocios = await cargar_negocios_db()
+    for n in negocios:
+        if n.get("rut") == "10.382.724-8" and any(
+            w["numero"] == bot_whatsapp for w in n.get("numeros", [])
+        ):
+            return settings.wa_bridge_ventas_url or settings.wa_bridge_url
+    return settings.wa_bridge_url
 
 
 async def procesar_mensaje_entrante(bot_whatsapp: str, from_number: str, texto: str, message_id: str = ""):
@@ -107,7 +124,7 @@ async def procesar_mensaje_entrante(bot_whatsapp: str, from_number: str, texto: 
         return
 
     rut = negocio["rut"]
-    provider = get_provider()
+    provider = await get_provider(bot_whatsapp)
 
     async with async_session() as db:
         contacto = await _obtener_o_crear_contacto(db, from_number, rut)
